@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useRef } from "react";
+import Navbar from "@/components/Navbar";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("t2v");
@@ -11,76 +11,93 @@ export default function HomePage() {
   const [modelQuality, setModelQuality] = useState("wan2.2-14b");
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
   const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [referenceImage, setReferenceImage] = useState(null);
+  const [referenceImageUrl, setReferenceImageUrl] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const fileInputRef = useRef(null);
 
-  const handleGenerate = () => {
-    if (!prompt) return;
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReferenceImage(file);
+      const url = URL.createObjectURL(file);
+      setReferenceImageUrl(url);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    setErrorMsg("");
     setIsGenerating(true);
-    setProgress(15);
-    
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval);
-          return 95;
-        }
-        return prev + 15;
-      });
-    }, 1500);
+    setProgress(10);
+    setStatusMessage("Submitting task to Wan 2.2 GPU cluster...");
 
-    setTimeout(() => {
-      clearInterval(interval);
-      setProgress(100);
+    try {
+      // Send task to /api/generate
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          negativePrompt,
+          aspectRatio,
+          quality: modelQuality,
+          mode: activeTab,
+          imageUrl: referenceImageUrl || null
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to start generation task");
+      }
+
+      const taskId = data.taskId;
+      setStatusMessage("Synthesizing latent frames with Wan 2.2...");
+      setProgress(25);
+
+      // Poll task status
+      const pollInterval = setInterval(async () => {
+        try {
+          const pollRes = await fetch(`/api/generate?taskId=${encodeURIComponent(taskId)}`);
+          if (!pollRes.ok) return;
+
+          const pollData = await pollRes.json();
+          if (pollData.status === "completed" && pollData.videoUrl) {
+            clearInterval(pollInterval);
+            setProgress(100);
+            setIsGenerating(false);
+            setGeneratedVideo(pollData.videoUrl);
+            setStatusMessage("Rendering complete!");
+          } else if (pollData.status === "failed") {
+            clearInterval(pollInterval);
+            setIsGenerating(false);
+            setErrorMsg(pollData.error || "Video generation failed on GPU worker.");
+          } else {
+            if (pollData.progress) {
+              setProgress(pollData.progress);
+            } else {
+              setProgress((prev) => Math.min(95, prev + 5));
+            }
+          }
+        } catch (pollErr) {
+          console.warn("[POLL_WARNING]", pollErr);
+        }
+      }, 1500);
+
+    } catch (err) {
+      console.error("[GENERATE_ERROR]", err);
       setIsGenerating(false);
-      setGeneratedVideo("https://assets.mixkit.co/videos/preview/mixkit-futuristic-city-with-flying-cars-41551-large.mp4");
-    }, 8000);
+      setErrorMsg(err.message || "Failed to initiate video generation");
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-zinc-100 selection:bg-rose-500 selection:text-white">
-      {/* 顶部导航栏 */}
-      <header className="sticky top-0 z-50 border-b border-zinc-800/80 bg-[#090a0f]/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-violet-600 shadow-lg shadow-rose-600/30 font-bold text-white text-lg">
-              P
-            </div>
-            <div>
-              <span className="text-xl font-black tracking-wider text-white">
-                PORN<span className="bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">MAKE</span>
-              </span>
-              <span className="ml-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-400">
-                WAN 2.2 STUDIO
-              </span>
-            </div>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="/" className="text-white hover:text-rose-400 transition-colors">
-              Studio
-            </Link>
-            <Link href="/gallery" className="hover:text-rose-400 transition-colors">
-              Gallery
-            </Link>
-            <Link href="/pricing" className="hover:text-rose-400 transition-colors flex items-center gap-1.5">
-              Pricing <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] text-rose-300">Credits</span>
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-400">
-              <span className="text-rose-400 font-bold">⚡</span>
-              <span>Balance: <strong className="text-white">30 Credits</strong></span>
-            </div>
-            <Link
-              href="/login"
-              className="rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition-all hover:brightness-110"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* 唯一全站统一顶栏 */}
+      <Navbar />
 
       {/* 主工作区 */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -123,10 +140,35 @@ export default function HomePage() {
 
             {/* 图生视频上传区 */}
             {activeTab === "i2v" && (
-              <div className="rounded-xl border-2 border-dashed border-zinc-800 hover:border-rose-500/50 bg-zinc-950/40 p-6 text-center transition-all cursor-pointer">
-                <div className="mx-auto text-2xl">📷</div>
-                <p className="mt-2 text-sm font-medium text-zinc-300">Click to upload reference image</p>
-                <p className="text-xs text-zinc-500 mt-1">Supports PNG, JPG, WEBP (Max 20MB)</p>
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                />
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-xl border-2 border-dashed border-zinc-800 hover:border-rose-500/50 bg-zinc-950/40 p-6 text-center transition-all cursor-pointer relative overflow-hidden"
+                >
+                  {referenceImageUrl ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <img
+                        src={referenceImageUrl}
+                        alt="Reference"
+                        className="max-h-36 rounded-lg object-contain border border-zinc-800"
+                      />
+                      <span className="text-xs text-rose-400 font-medium">Click to change reference image</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mx-auto text-2xl">📷</div>
+                      <p className="mt-2 text-sm font-medium text-zinc-300">Click to upload reference image</p>
+                      <p className="text-xs text-zinc-500 mt-1">Supports PNG, JPG, WEBP (Max 20MB)</p>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
@@ -209,12 +251,18 @@ export default function HomePage() {
               </div>
             </div>
 
+            {errorMsg && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
             {/* 提交生成按钮 */}
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !prompt}
+              disabled={isGenerating || !prompt.trim()}
               className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold shadow-xl transition-all ${
-                isGenerating || !prompt
+                isGenerating || !prompt.trim()
                   ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
                   : "bg-gradient-to-r from-rose-600 via-pink-600 to-violet-600 text-white hover:brightness-110 shadow-rose-600/30"
               }`}
@@ -244,7 +292,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">Rendering with Wan 2.2...</h3>
-                  <p className="text-xs text-zinc-400 mt-1">Synthesizing frames & motion interpolation</p>
+                  <p className="text-xs text-zinc-400 mt-1">{statusMessage || "Synthesizing frames & motion interpolation"}</p>
                 </div>
                 <div className="w-3/4 mx-auto bg-zinc-800 rounded-full h-2 overflow-hidden">
                   <div 
@@ -267,7 +315,9 @@ export default function HomePage() {
                 <div className="flex gap-2">
                   <a
                     href={generatedVideo}
-                    download
+                    download="wan2.2-video.mp4"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-xs font-semibold text-white hover:bg-zinc-700 transition-all"
                   >
                     ⬇️ Download MP4

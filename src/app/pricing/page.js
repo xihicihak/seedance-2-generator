@@ -2,25 +2,26 @@
 
 import { useSession } from "next-auth/react";
 import { useState } from "react";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { FaCheck, FaInfoCircle } from "react-icons/fa";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
 const PLANS = [
-  { id: "basic", name: "Basic Pack", price: "$5", credits: 100, description: "Perfect for testing custom prompts and exploring styles." },
-  { id: "standard", name: "Standard Pack", price: "$10", credits: 250, description: "Ideal for regular creators wanting high resolution outputs." },
-  { id: "pro", name: "Professional Pack", price: "$20", credits: 600, description: "Designed for power users demanding batch exports and high speed.", popular: true },
-  { id: "business", name: "Business Pack", price: "$50", credits: 2000, description: "Maximum value pack for agency workflows and large volume generations." }
+  { id: "basic", name: "Starter Pack", price: "$5", credits: 100, description: "Great for testing Wan 2.2 prompts and quick short generations." },
+  { id: "standard", name: "Creator Pack", price: "$10", credits: 250, description: "Ideal for regular creators generating high definition videos." },
+  { id: "pro", name: "Studio Pack", price: "$20", credits: 600, description: "Designed for power users demanding batch exports and high speed.", popular: true },
+  { id: "business", name: "Agency Pack", price: "$50", credits: 2000, description: "Maximum value pack for high-volume commercial production." }
 ];
 
 export default function Pricing() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [loadingPlan, setLoadingPlan] = useState(null);
 
   const handleCheckout = async (planId) => {
     if (status !== "authenticated") {
-      toast.error("You must sign in with Google to purchase credit packages.");
+      toast.error("Please sign in first to purchase credits.");
       return;
     }
 
@@ -41,72 +42,85 @@ export default function Pricing() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg-page select-none text-primary-text overflow-hidden">
+    <div className="flex min-h-screen flex-col bg-[#090a0f] text-zinc-100 selection:bg-rose-500 selection:text-white">
       <Toaster position="top-right" />
+      <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-12 sm:px-6 lg:px-8 flex flex-col gap-10 overflow-y-auto scrollbar-subtle items-center">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full mb-1">
-            <FaInfoCircle className="text-primary text-xs" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Pricing Plans</span>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-12 sm:px-6 lg:px-8 flex flex-col gap-10 items-center">
+        <div className="text-center space-y-4 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full mb-1">
+            <span className="text-rose-400 text-xs">⚡</span>
+            <span className="text-[10px] font-bold text-rose-300 uppercase tracking-widest">Pricing & Credits</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight uppercase">Buy Credits Packs</h1>
-          <p className="text-xs sm:text-sm text-secondary-text max-w-lg leading-relaxed">
-            Purchase flexible credit packages to perform high-resolution predictions. Keep all profits — we handle AI infrastructure.
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+            Wan 2.2 GPU Compute Credits
+          </h1>
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            Flexible pay-as-you-go credit packages for Wan 2.2 14B High-Definition video rendering. No monthly lock-in, credits never expire.
           </p>
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`relative bg-bg-card border rounded-lg p-6 flex flex-col justify-between gap-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-                plan.popular ? "border-primary shadow-xl shadow-primary/5 scale-105" : "border-divider/50 shadow-md"
+              className={`relative flex flex-col rounded-2xl border p-6 transition-all duration-300 backdrop-blur-xl ${
+                plan.popular
+                  ? "border-rose-500/80 bg-zinc-900/80 shadow-2xl shadow-rose-600/20 ring-1 ring-rose-500/50"
+                  : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"
               }`}
             >
               {plan.popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[9px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md shadow-rose-600/30">
                   Most Popular
-                </span>
+                </div>
               )}
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-extrabold uppercase tracking-wide text-primary-text">{plan.name}</h3>
-                  <p className="text-2xl font-black tracking-tight text-white">{plan.price}</p>
-                </div>
-                
-                <div className="text-xs bg-bg-page/50 border border-divider/30 p-3 rounded text-center font-extrabold text-primary">
-                  {plan.credits} Art Credits
-                </div>
-
-                <p className="text-xs text-secondary-text leading-relaxed font-medium min-h-[3rem]">{plan.description}</p>
-                
-                <ul className="space-y-2 border-t border-divider/30 pt-4 text-xs font-semibold text-secondary-text">
-                  <li className="flex items-center gap-2">
-                    <FaCheck className="text-primary text-[10px]" />
-                    <span>Dynamic aspect ratios</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <FaCheck className="text-primary text-[10px]" />
-                    <span>HD image downloads</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <FaCheck className="text-primary text-[10px]" />
-                    <span>No subscription required</span>
-                  </li>
-                </ul>
+              <div className="mb-4">
+                <h3 className="text-lg font-bold text-white">{plan.name}</h3>
+                <p className="mt-1 text-xs text-zinc-400 min-h-[32px]">{plan.description}</p>
               </div>
+
+              <div className="mb-6 flex items-baseline gap-1">
+                <span className="text-4xl font-black text-white">{plan.price}</span>
+                <span className="text-xs text-zinc-500">/ one-time</span>
+              </div>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 mb-6 text-center">
+                <div className="text-2xl font-black text-rose-400">{plan.credits}</div>
+                <div className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">GPU Credits</div>
+              </div>
+
+              <ul className="mb-8 space-y-2.5 text-xs text-zinc-300 flex-1">
+                <li className="flex items-center gap-2">
+                  <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
+                  <span>Wan 2.2 (14B) & Fast Turbo</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
+                  <span>Text to Video & Image to Video</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
+                  <span>Commercial usage rights</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
+                  <span>Credits never expire</span>
+                </li>
+              </ul>
 
               <button
                 onClick={() => handleCheckout(plan.id)}
-                disabled={loadingPlan !== null}
-                className={`w-full py-3 rounded-full text-xs font-bold transition-all shadow-md cursor-pointer select-none active:scale-[0.98] ${
-                  plan.popular ? "bg-primary text-white hover:bg-primary-hover shadow-primary/15" : "bg-bg-page hover:bg-bg-card text-primary-text border border-divider"
-                }`}
+                disabled={loadingPlan === plan.id}
+                className={`w-full rounded-xl py-3 text-xs font-bold transition-all shadow-md active:scale-[0.98] ${
+                  plan.popular
+                    ? "bg-gradient-to-r from-rose-600 via-pink-600 to-violet-600 text-white hover:brightness-110 shadow-rose-600/30"
+                    : "bg-zinc-800 hover:bg-zinc-700 text-white"
+                } ${loadingPlan === plan.id ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {loadingPlan === plan.id ? "Loading checkout..." : "Purchase Credits"}
+                {loadingPlan === plan.id ? "Redirecting..." : `Buy for ${plan.price}`}
               </button>
             </div>
           ))}

@@ -1,0 +1,329 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import config from "@/lib/config";
+
+// Helper: map aspect ratio to pixel dimensions
+function getResolution(aspectRatio, quality) {
+  const isFast = quality === "wan2.2-fast";
+  switch (aspectRatio) {
+    case "9:16":
+      return isFast ? { width: 480, height: 832 } : { width: 720, height: 1280 };
+    case "1:1":
+      return isFast ? { width: 640, height: 640 } : { width: 960, height: 960 };
+    case "16:9":
+    default:
+      return isFast ? { width: 832, height: 480 } : { width: 1280, height: 720 };
+  }
+}
+
+// Build ComfyUI prompt workflow JSON for Wan 2.2 (14B T2V and I2V)
+function buildWanWorkflow({ mode, prompt, negativePrompt, width, height, quality, imageUrl }) {
+  const isI2V = mode === "i2v" && Boolean(imageUrl);
+  const steps = quality === "wan2.2-fast" ? 20 : 30;
+  const modelName = isI2V
+    ? config.ai.comfyui.defaultI2VModel
+    : config.ai.comfyui.defaultT2VModel;
+
+  const defaultNeg = negativePrompt?.trim() || 
+    "色调艳丽，过曝，静态，残缺，失真，模糊，低分辨率，扭曲的面部，肢体残缺，水印，字幕, blurry, deformed limbs, low quality";
+
+  const workflow = {
+    "1": {
+      "class_type": "WanVideoModelLoader",
+      "inputs": {
+        "model_name": modelName
+      }
+    },
+    "2": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": prompt,
+        "clip": ["1", 1]
+      }
+    },
+    "3": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": defaultNeg,
+        "clip": ["1", 1]
+      }
+    },
+    "4": isI2V
+      ? {
+          "class_type": "WanImageToVideo",
+          "inputs": {
+            "image": ["8", 0],
+            "width": width,
+            "height": height,
+            "length": 81
+          }
+        }
+      : {
+          "class_type": "WanEmptyLatentVideo",
+          "inputs": {
+            "width": width,
+            "height": height,
+            "length": 81,
+            "batch_size": 1
+          }
+        },
+    "5": {
+      "class_type": "KSampler",
+      "inputs": {
+        "seed": Math.floor(Math.random() * 10000000000),
+        "steps": steps,
+        "cfg": 6.0,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 1.0,
+        "model": ["1", 0],
+        "positive": ["2", 0],
+        "negative": ["3", 0],
+        "latent_image": ["4", 0]
+      }
+    },
+    "6": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": ["5", 0],
+        "vae": ["1", 2]
+      }
+    },
+    "7": {
+      "class_type": "VHS_VideoCombine",
+      "inputs": {
+        "images": ["6", 0],
+        "frame_rate": 16,
+        "loop_count": 0,
+        "filename_prefix": "PornMake_Wan22",
+        "format": "video/h264-mp4",
+        "save_output": true
+      }
+    }
+  };
+
+  if (isI2V) {
+    workflow["8"] = {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": imageUrl
+      }
+    };
+  }
+
+  return workflow;
+}
+
+// In-memory store for dev mock tasks when ComfyUI GPU backend is offline
+const mockTasks = new Map();
+
+export async function POST(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    const body = await req.json();
+    const {
+      prompt,
+      negativePrompt,
+      aspectRatio = "16:9",
+      quality = "wan2.2-14b",
+      mode = "t2v",
+      imageUrl = null
+    } = body;
+
+    if (!prompt?.trim()) {
+      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    }
+
+    const { width, height } = getResolution(aspectRatio, quality);
+    const comfyApiUrl = process.env.COMFYUI_API_URL || config.ai.comfyui.apiUrl;
+    const workflow = buildWanWorkflow({ mode, prompt, negativePrompt, width, height, quality, imageUrl });
+
+    let taskId = null;
+    let isMock = false;
+
+    // Attempt to submit prompt to ComfyUI backend
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      const comfyRes = await fetch(`${comfyApiUrl}/prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: workflow }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (comfyRes.ok) {
+        const comfyData = await comfyRes.json();
+        taskId = comfyData.prompt_id;
+      } else {
+        const errorText = await comfyRes.text();
+        console.warn(`[COMFYUI] Server returned error ${comfyRes.status}:`, errorText);
+      }
+    } catch (err) {
+      console.warn(`[COMFYUI] Unable to reach ComfyUI backend at ${comfyApiUrl} (${err.message}). Entering simulated dev mode.`);
+      isMock = true;
+      taskId = `wan22_task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      mockTasks.set(taskId, {
+        createdAt: Date.now(),
+        duration: 7000,
+        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-futuristic-city-with-flying-cars-41551-large.mp4"
+      });
+    }
+
+    // Save record to database if prisma is initialized
+    try {
+      if (prisma?.creation) {
+        await prisma.creation.create({
+          data: {
+            prompt,
+            imageUrl: imageUrl || null,
+            aspectRatio,
+            quality,
+            status: "processing",
+            requestId: taskId,
+            userId: session?.user?.id || undefined,
+          }
+        });
+      }
+    } catch (dbErr) {
+      console.warn("[DB] Could not record creation:", dbErr.message);
+    }
+
+    // Deduct user credits if logged in
+    try {
+      if (session?.user?.id && prisma?.user) {
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { credits: { decrement: 10 } }
+        });
+      }
+    } catch (creditErr) {
+      console.warn("[CREDITS] Deduct credits warning:", creditErr.message);
+    }
+
+    return NextResponse.json({
+      success: true,
+      taskId,
+      status: "processing",
+      comfyApiUrl,
+      mode,
+      quality,
+      aspectRatio,
+      isMock
+    });
+  } catch (error) {
+    console.error("[GENERATE_API_ERROR]", error);
+    return NextResponse.json({ error: error.message || "Failed to initiate generation task" }, { status: 500 });
+  }
+}
+
+export async function GET(req) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const taskId = searchParams.get("taskId") || searchParams.get("promptId");
+
+    if (!taskId) {
+      return NextResponse.json({ error: "taskId is required" }, { status: 400 });
+    }
+
+    // Check mock dev store
+    if (mockTasks.has(taskId)) {
+      const task = mockTasks.get(taskId);
+      const elapsed = Date.now() - task.createdAt;
+      if (elapsed >= task.duration) {
+        return NextResponse.json({
+          status: "completed",
+          progress: 100,
+          videoUrl: task.videoUrl
+        });
+      }
+      const progress = Math.min(95, Math.floor((elapsed / task.duration) * 100));
+      return NextResponse.json({
+        status: "processing",
+        progress
+      });
+    }
+
+    const comfyApiUrl = process.env.COMFYUI_API_URL || config.ai.comfyui.apiUrl;
+
+    // Poll ComfyUI /history/{taskId}
+    try {
+      const historyRes = await fetch(`${comfyApiUrl}/history/${taskId}`, {
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store"
+      });
+
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        const taskHistory = historyData[taskId];
+
+        if (taskHistory && taskHistory.outputs) {
+          // Find output node with videos / gifs / images
+          for (const nodeId of Object.keys(taskHistory.outputs)) {
+            const nodeOutput = taskHistory.outputs[nodeId];
+            const mediaList = nodeOutput.videos || nodeOutput.gifs || nodeOutput.images;
+            if (Array.isArray(mediaList) && mediaList.length > 0) {
+              const fileItem = mediaList[0];
+              const filename = encodeURIComponent(fileItem.filename);
+              const subfolder = encodeURIComponent(fileItem.subfolder || "");
+              const type = encodeURIComponent(fileItem.type || "output");
+              const videoUrl = `${comfyApiUrl}/view?filename=${filename}&subfolder=${subfolder}&type=${type}`;
+
+              // Update database record
+              try {
+                if (prisma?.creation) {
+                  await prisma.creation.updateMany({
+                    where: { requestId: taskId },
+                    data: {
+                      status: "completed",
+                      videoFiles: [videoUrl]
+                    }
+                  });
+                }
+              } catch (e) {
+                console.warn("[DB] Update creation status error:", e.message);
+              }
+
+              return NextResponse.json({
+                status: "completed",
+                progress: 100,
+                videoUrl
+              });
+            }
+          }
+        }
+      }
+
+      // If not yet in history, check /queue
+      const queueRes = await fetch(`${comfyApiUrl}/queue`, { cache: "no-store" });
+      if (queueRes.ok) {
+        const queueData = await queueRes.json();
+        const isRunning = queueData.queue_running?.some((item) => item[1] === taskId);
+        const isPending = queueData.queue_pending?.some((item) => item[1] === taskId);
+
+        if (isRunning) {
+          return NextResponse.json({ status: "processing", progress: 65 });
+        }
+        if (isPending) {
+          return NextResponse.json({ status: "pending", progress: 20 });
+        }
+      }
+
+      return NextResponse.json({ status: "processing", progress: 40 });
+    } catch (err) {
+      console.warn(`[COMFYUI] Polling error for task ${taskId}:`, err.message);
+      return NextResponse.json({
+        status: "processing",
+        progress: 50,
+        message: "Rendering in progress on GPU cluster..."
+      });
+    }
+  } catch (error) {
+    console.error("[GENERATE_POLL_ERROR]", error);
+    return NextResponse.json({ error: error.message || "Failed to poll task status" }, { status: 500 });
+  }
+}

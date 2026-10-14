@@ -4,19 +4,18 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaDownload,
   FaMagic,
   FaCalendarAlt,
-  FaExpandAlt,
   FaVideo,
-  FaMusic,
 } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { downloadMedia } from "@/lib/utils";
 import { FiDownload } from "react-icons/fi";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function CreationsPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [creations, setCreations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +26,7 @@ export default function CreationsPage() {
     if (status === "authenticated") {
       fetchCreations();
     } else if (status === "unauthenticated") {
-      router.push("/");
+      router.push("/login");
     }
   }, [status]);
 
@@ -45,98 +44,86 @@ export default function CreationsPage() {
     }
   };
 
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-transparent">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full drop-shadow-md"
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 bg-transparent overflow-y-auto custom-scrollbar p-4 md:p-12">
-      <header className="max-w-7xl mx-auto mb-10 space-y-3 pt-4 md:pt-0">
-        <div className="flex items-center gap-3 text-primary mb-1">
-          <FaCalendarAlt className="text-sm" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.4em]">
-            Historical Archive
-          </span>
-        </div>
-        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-foreground">
-          MY CREATIONS
-        </h1>
-        <p className="text-muted font-medium text-xs uppercase tracking-widest leading-loose max-w-xl">
-          Your generative legacy, manifested and stored.{" "}
-          <br className="hidden md:block" />
-          Quick access to your visual nodes.
-        </p>
-      </header>
+    <div className="min-h-screen flex flex-col bg-[#090a0f] text-zinc-100 selection:bg-rose-500 selection:text-white">
+      <Navbar />
 
-      <div className="max-w-7xl mx-auto">
-        {creations.length === 0 ? (
-          <div className="py-32 flex flex-col items-center justify-center text-center space-y-8">
-            <div className="w-20 h-20 rounded-3xl bg-glass-bg border border-glass-border flex items-center justify-center shadow-sm">
-              <FaMagic className="text-3xl text-muted" />
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        <header className="mb-10 space-y-3 pt-4">
+          <div className="flex items-center gap-3 text-rose-500 mb-1">
+            <FaCalendarAlt className="text-sm" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.4em] text-rose-400">
+              Generated Archive
+            </span>
+          </div>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
+            Wan 2.2 Creations
+          </h1>
+          <p className="text-zinc-400 font-medium text-xs tracking-wider leading-relaxed max-w-xl">
+            All AI video generations associated with your PornMake account.
+          </p>
+        </header>
+
+        {loading ? (
+          <div className="py-32 flex items-center justify-center">
+            <div className="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : creations.length === 0 ? (
+          <div className="py-32 flex flex-col items-center justify-center text-center space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-12 backdrop-blur-xl">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center text-2xl text-zinc-400">
+              <FaMagic />
             </div>
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold italic text-foreground">COLLECTION EMPTY</h3>
-              <button
-                onClick={() => router.push("/")}
-                className="px-8 py-3 bg-primary-hover hover:bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-primary/20"
-              >
-                Start your first Manifestation
-              </button>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-white">No Creations Yet</h3>
+              <p className="text-xs text-zinc-400 max-w-sm">
+                You haven&apos;t generated any videos yet. Head over to the Studio to create your first Wan 2.2 masterpiece.
+              </p>
             </div>
+            <button
+              onClick={() => router.push("/")}
+              className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 shadow-lg shadow-rose-600/30"
+            >
+              Go to Studio
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
-              {creations.map((item, index) => (
+              {creations.map((item) => (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="group relative rounded-xl bg-glass-bg backdrop-blur-3xl border border-glass-border aspect-square cursor-pointer overflow-hidden shadow-sm hover:shadow-md transition-shadow transition-all"
                   onClick={() => setSelectedImage(item)}
+                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 p-2 shadow-lg transition-all hover:border-rose-500/50"
                 >
-                  {item.status === "completed" ? (
-                    <video
-                      src={item.imageUrl}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      muted
-                      autoPlay
-                      loop
-                      playsInline
-                    />
-                  ) : item.status === "failed" ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-red-500/10 gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-500">
-                        <span className="font-bold whitespace-nowrap">✕</span>
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+                    {item.videoFiles?.[0] || item.imageUrl ? (
+                      <video
+                        src={item.videoFiles?.[0] || item.imageUrl}
+                        muted
+                        loop
+                        playsInline
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onMouseEnter={(e) => e.target.play().catch(() => {})}
+                        onMouseLeave={(e) => e.target.pause()}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-zinc-600">
+                        <FaVideo size={24} />
                       </div>
-                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Failed</span>
+                    )}
+                    <div className="absolute top-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                      {item.quality || "Wan 2.2"}
                     </div>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-glass-hover gap-4">
-                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      <span className="text-[9px] font-black text-muted uppercase tracking-[0.2em] animate-pulse">Manifesting...</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 p-4 flex flex-col justify-end">
-                    <p className="text-white text-xs font-semibold tracking-tight truncate mb-1">
+                  </div>
+                  <div className="p-3">
+                    <p className="line-clamp-2 text-xs text-zinc-300 font-medium">
                       {item.prompt}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-semibold text-primary uppercase tracking-widest">
-                        {item.aspectRatio}
-                      </span>
-                      <div className="w-8 h-8 rounded-lg bg-glass-hover border border-glass-border flex items-center justify-center text-white">
-                        <FaExpandAlt className="text-[10px]" />
-                      </div>
+                    <div className="mt-2 flex items-center justify-between text-[10px] text-zinc-500">
+                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                      <span className="capitalize text-rose-400">{item.status}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -144,208 +131,49 @@ export default function CreationsPage() {
             </AnimatePresence>
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Image Detail Modal */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-black/20 backdrop-blur-sm p-4 md:p-12 flex flex-col items-center justify-center"
-            onClick={() => setSelectedImage(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="relative max-w-6xl w-full h-full bg-glass-bg border border-glass-border rounded-xl overflow-hidden flex flex-col md:flex-row shadow-2xl backdrop-blur-3xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Image Side */}
-              <div className="flex w-full md:w-[50%] h-[50%] md:h-full p-2 bg-glass-bg backdrop-blur-3xl flex border-b md:border-b-0 md:border-r border-glass-border">
-                {selectedImage.status === "completed" ? (
-                  <video
-                    src={selectedImage.imageUrl}
-                    className="h-full w-full object-contain"
-                    controls
-                    autoPlay
-                    loop
-                    playsInline
-                  />
-                ) : selectedImage.status === "failed" ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-red-500/5 gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 text-3xl">
-                      ✕
-                    </div>
-                    <div className="text-center space-y-2">
-                      <h3 className="text-sm font-bold text-red-500 uppercase tracking-widest">Generation Failed</h3>
-                      <p className="text-xs text-muted max-w-xs">{selectedImage.error || "An unknown error occurred during manifestation."}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-glass-hover gap-6">
-                    <div className="relative">
-                      <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <FaMagic className="text-primary/30 text-xl animate-pulse" />
-                      </div>
-                    </div>
-                    <div className="text-center space-y-2">
-                      <h3 className="text-sm font-black text-foreground uppercase tracking-[0.3em] animate-pulse">Generating...</h3>
-                      <p className="text-[10px] text-muted uppercase tracking-widest">Bringing your vision to resonance</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Details Side */}
-              <div className="flex w-full md:w-[50%] h-[50%] md:h-full p-6 flex flex-col bg-glass-bg backdrop-blur-3xl overflow-y-auto custom-scrollbar">
-                <div className="flex flex-col justify-center space-y-4">
-                  <div className="space-y-2">
-                    <div className="text-xs text-muted">
-                      MANIFEST PARAMETERS
-                    </div>
-                    <p className="text-sm font-normal text-foreground leading-relaxed">
-                      {selectedImage.prompt}
-                    </p>
-                  </div>
-
-                  <div className="space-y-6 border-t border-white/5 pt-10">
-                    <div className="grid grid-cols-2 gap-8">
-                      <div className="space-y-1.5">
-                        <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Ratio</div>
-                        <div className="text-xs text-foreground font-medium">{selectedImage.aspectRatio}</div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Resolution</div>
-                        <div className="text-xs text-foreground font-medium">{selectedImage.resolution}</div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Duration</div>
-                        <div className="text-xs text-foreground font-medium">{selectedImage.duration ? `${selectedImage.duration}s` : "5s"}</div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Quality</div>
-                        <div className="text-xs text-foreground font-medium uppercase">{selectedImage.quality || "Basic"}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4 border-t border-glass-border pt-6">
-                      {selectedImage.inputImages?.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Image References</div>
-                          <div className="grid grid-cols-4 gap-2">
-                            {selectedImage.inputImages.map((img, i) => (
-                              <div key={i} className="relative aspect-square rounded-md bg-glass-hover overflow-hidden border border-glass-border group">
-                                <img src={img} className="w-full h-full object-cover" />
-                                <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <a href={img} target="_blank" rel="noopener noreferrer" className="p-1 bg-black/60 rounded flex items-center justify-center">
-                                    <FaExpandAlt className="text-[8px] text-white" />
-                                  </a>
-                                </div>
-                                <div className="absolute bottom-1 right-1 bg-black/60 px-1 rounded text-[8px] text-white">@image{i+1}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedImage.videoFiles?.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Video References</div>
-                          <div className="grid grid-cols-3 gap-2">
-                            {selectedImage.videoFiles.map((v, i) => (
-                              <div key={i} className="relative aspect-video rounded-md bg-glass-hover overflow-hidden border border-glass-border group">
-                                <video src={v} className="w-full h-full object-cover" />
-                                <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <a href={v} target="_blank" rel="noopener noreferrer" className="p-1 bg-black/60 rounded flex items-center justify-center">
-                                    <FaExpandAlt className="text-[8px] text-white" />
-                                  </a>
-                                </div>
-                                <div className="absolute bottom-1 right-1 bg-black/60 px-1 rounded text-[8px] text-white">@video{i+1}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedImage.audioFiles?.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Audio References</div>
-                          <div className="space-y-2">
-                            {selectedImage.audioFiles.map((a, i) => (
-                              <div key={i} className="flex items-center gap-2 p-2 rounded-md bg-glass-hover border border-glass-border">
-                                <FaMusic className="text-[10px] text-primary" />
-                                <span className="text-[10px] text-foreground truncate flex-1">{a.split('/').pop()}</span>
-                                <span className="text-[8px] text-muted font-bold">@audio{i+1}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="space-y-1.5 pt-2">
-                        <div className="text-[9px] font-semibold text-muted uppercase tracking-widest">Timestamp</div>
-                        <div className="text-[11px] text-muted">
-                          {new Date(selectedImage.createdAt).toLocaleString('en-US', { 
-                            month: 'long', 
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-12">
-                  <button
-                    onClick={async () => {
-                      if (selectedImage.status !== "completed") return;
-                      setDownloading(true);
-                      await downloadMedia(selectedImage.imageUrl, `seedance-${selectedImage.id}.mp4`);
-                      setDownloading(false);
-                    }}
-                    disabled={downloading || selectedImage.status !== "completed"}
-                    className="w-full py-3 bg-gradient-to-r from-primary-hover to-primary text-white rounded-lg font-bold tracking-wider uppercase text-xs flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-primary/20 border border-primary/50"
-                  >
-                    {downloading ? (
-                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <FiDownload size={16} />
-                    )}
-                    {selectedImage.status === "completed" 
-                      ? (downloading ? "Extracting..." : "Download Piece")
-                      : selectedImage.status === "failed" 
-                        ? "Generation Failed" 
-                        : "Generating..."}
-                  </button>
-                </div>
-              </div>
-
-              {/* Close Button */}
+      {/* Video Detail Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-4">
+            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+              <video
+                src={selectedImage.videoFiles?.[0] || selectedImage.imageUrl}
+                controls
+                autoPlay
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div>
+              <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-bold">Prompt</h4>
+              <p className="text-sm text-zinc-200 mt-1">{selectedImage.prompt}</p>
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={async () => {
+                  setDownloading(true);
+                  await downloadMedia(selectedImage.videoFiles?.[0] || selectedImage.imageUrl, `pornmake-${selectedImage.id}.mp4`);
+                  setDownloading(false);
+                }}
+                disabled={downloading}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-rose-600/30 hover:brightness-110"
+              >
+                <FiDownload />
+                <span>{downloading ? "Downloading..." : "Download MP4"}</span>
+              </button>
               <button
                 onClick={() => setSelectedImage(null)}
-                className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center text-muted hover:text-white transition-colors"
+                className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white"
               >
-                <span className="text-xl">✕</span>
+                Close
               </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 0px;
-        }
-        .custom-scrollbar {
-          scrollbar-width: none;
-        }
-      `}</style>
+      <Footer />
     </div>
   );
 }

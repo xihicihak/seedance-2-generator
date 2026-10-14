@@ -1,10 +1,12 @@
 /**
- * Centralized configuration for the SaaS template.
+ * Centralized configuration for PornMake (Wan 2.2 Studio).
  * All environment variables are validated and exported from here.
  */
 
 const config = {
-  appName: "Seedance V2 Template",
+  appName: "PornMake - Wan 2.2 Studio",
+  brandName: "PornMake",
+  domain: process.env.NEXT_PUBLIC_APP_URL || "https://www.pornmakes.com",
   auth: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -27,60 +29,16 @@ const config = {
     }
   },
   ai: {
-    seedance: {
-      apiKey: process.env.SEEDANCE_V2_API_KEY,
-      endpoints: {
-        t2v: {
-          "480p": "https://api.muapi.ai/api/v1/seedance-2.0-t2v-480p",
-          "720p": "https://api.muapi.ai/api/v1/seedance-v2.0-t2v"
-        },
-        i2v: {
-          "480p": "https://api.muapi.ai/api/v1/seedance-2.0-i2v-480p",
-          "720p": "https://api.muapi.ai/api/v1/seedance-v2.0-i2v"
-        },
-        reference: {
-          "480p": "https://api.muapi.ai/api/v1/seedance-2.0-omni-reference-480p",
-          "720p": "https://api.muapi.ai/api/v1/seedance-2.0-omni-reference"
-        }
-      }
+    comfyui: {
+      apiUrl: process.env.COMFYUI_API_URL || "http://127.0.0.1:8188",
+      defaultT2VModel: "wan2.1_t2v_14B_bf16.safetensors",
+      defaultI2VModel: "wan2.1_i2v_14B_720p.safetensors",
     },
-    seedanceMini: {
-      apiKey: process.env.SEEDANCE_V2_API_KEY,
-      endpoints: {
-        t2v: {
-          "480p": "https://api.muapi.ai/api/v1/seedance-2-mini-text-to-video",
-          "720p": "https://api.muapi.ai/api/v1/seedance-2-mini-text-to-video"
-        },
-        i2v: {
-          "480p": "https://api.muapi.ai/api/v1/seedance-2-mini-image-to-video",
-          "720p": "https://api.muapi.ai/api/v1/seedance-2-mini-image-to-video"
-        },
-        reference: {
-          "480p": "https://api.muapi.ai/api/v1/seedance-2-mini-omni-reference",
-          "720p": "https://api.muapi.ai/api/v1/seedance-2-mini-omni-reference"
-        }
-      }
-    }
   },
   db: {
     url: process.env.DATABASE_URL,
+    directUrl: process.env.DIRECT_URL,
   }
 };
-
-// Simple validation to warn if critical keys are missing
-const requiredKeys = [
-  ["GOOGLE_CLIENT_ID", config.auth.google.clientId],
-  ["GOOGLE_CLIENT_SECRET", config.auth.google.clientSecret],
-  ["STRIPE_SECRET_KEY", config.stripe.secretKey],
-  ["DATABASE_URL", config.db.url],
-];
-
-if (typeof window === "undefined") {
-  requiredKeys.forEach(([name, value]) => {
-    if (!value) {
-      console.warn(`[CONFIG] Warning: Missing critical environment variable: ${name}`);
-    }
-  });
-}
 
 export default config;
