@@ -63,6 +63,16 @@ export default function Navbar() {
 
         {/* User Balance & Actions */}
         <div className="hidden sm:flex items-center gap-3">
+          {(session?.user?.role === "ADMIN" || session?.user?.email === "xihicihak43@gmail.com") && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-gradient-to-r from-rose-600/20 via-pink-600/20 to-amber-500/20 px-3 py-1.5 text-xs font-bold text-rose-300 shadow-lg shadow-rose-950/40 hover:border-rose-400 hover:text-white transition-all"
+            >
+              <span>👑</span>
+              <span>Admin Portal</span>
+            </Link>
+          )}
+
           <Link
             href="/pricing"
             className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-700 transition-colors"
@@ -94,6 +104,16 @@ export default function Navbar() {
                   <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-800/80 mb-1 truncate">
                     {session.user.email}
                   </div>
+                  {(session.user.role === "ADMIN" || session.user.email === "xihicihak43@gmail.com") && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors"
+                    >
+                      <span>👑</span>
+                      <span>Admin Management</span>
+                    </Link>
+                  )}
                   <button
                     onClick={() => signOut({ callbackUrl: "/" })}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
@@ -158,6 +178,16 @@ export default function Navbar() {
             >
               Pricing & Credits
             </Link>
+            {(session?.user?.role === "ADMIN" || session?.user?.email === "xihicihak43@gmail.com") && (
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 py-2 text-sm font-bold text-amber-300"
+              >
+                <span>👑</span>
+                <span>Admin Master Portal</span>
+              </Link>
+            )}
             {status === "authenticated" ? (
               <button
                 onClick={() => {

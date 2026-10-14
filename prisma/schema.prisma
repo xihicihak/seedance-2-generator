@@ -40,6 +40,8 @@ model User {
   emailVerified DateTime?
   image         String?
   credits       Int        @default(30)
+  role          String     @default("USER")
+  createdAt     DateTime   @default(now())
   customApiKey  String?    @db.Text
   accounts      Account[]
   creations     Creation[]

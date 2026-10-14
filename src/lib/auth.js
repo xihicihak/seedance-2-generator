@@ -77,15 +77,18 @@ export const authOptions = {
   providers,
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      const adminEmails = (process.env.ADMIN_EMAILS || "xihicihak43@gmail.com").split(",").map(e => e.trim().toLowerCase());
       if (user) {
         token.id = user.id;
         token.credits = user.credits;
         token.customApiKey = user.customApiKey;
         token.isApiKeyUser = user.isApiKeyUser || false;
+        token.role = (user.email && adminEmails.includes(user.email.toLowerCase())) ? "ADMIN" : (user.role || "USER");
       }
       if (trigger === "update" && session) {
         if (session.customApiKey !== undefined) token.customApiKey = session.customApiKey;
         if (session.credits !== undefined) token.credits = session.credits;
+        if (session.role !== undefined) token.role = session.role;
       }
       const userId = token.id || token.sub;
       if (userId) {
@@ -93,11 +96,12 @@ export const authOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: userId },
-            select: { credits: true, customApiKey: true }
+            select: { credits: true, customApiKey: true, role: true, email: true }
           });
           if (dbUser) {
             token.credits = dbUser.credits;
             token.customApiKey = dbUser.customApiKey;
+            token.role = (dbUser.email && adminEmails.includes(dbUser.email.toLowerCase())) ? "ADMIN" : (dbUser.role || "USER");
           }
         } catch (err) {}
       }
@@ -109,6 +113,7 @@ export const authOptions = {
         session.user.credits = token.credits;
         session.user.customApiKey = token.customApiKey;
         session.user.isApiKeyUser = Boolean(token.customApiKey);
+        session.user.role = token.role || "USER";
       }
       return session;
     },
