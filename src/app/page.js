@@ -2,17 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { 
-  Sparkles, 
-  Video, 
-  Image as ImageIcon, 
-  Play, 
-  Download, 
-  Flame, 
-  Zap, 
-  ShieldCheck, 
-  Layers
-} from "lucide-react";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("t2v");
@@ -49,12 +38,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#090a0f] text-zinc-100 selection:bg-rose-500 selection:text-white">
-      {/* 顶部高端导航栏 */}
+      {/* 顶部导航栏 */}
       <header className="sticky top-0 z-50 border-b border-zinc-800/80 bg-[#090a0f]/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-violet-600 shadow-lg shadow-rose-600/30">
-              <Flame className="h-6 w-6 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 via-pink-600 to-violet-600 shadow-lg shadow-rose-600/30 font-bold text-white text-lg">
+              P
             </div>
             <div>
               <span className="text-xl font-black tracking-wider text-white">
@@ -71,7 +60,7 @@ export default function HomePage() {
               Studio
             </Link>
             <Link href="/gallery" className="hover:text-rose-400 transition-colors">
-              Explore Gallery
+              Gallery
             </Link>
             <Link href="/pricing" className="hover:text-rose-400 transition-colors flex items-center gap-1.5">
               Pricing <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] text-rose-300">Credits</span>
@@ -80,7 +69,7 @@ export default function HomePage() {
 
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-400">
-              <Zap className="h-3.5 w-3.5 text-rose-400" />
+              <span className="text-rose-400 font-bold">⚡</span>
               <span>Balance: <strong className="text-white">30 Credits</strong></span>
             </div>
             <Link
@@ -118,8 +107,7 @@ export default function HomePage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <Video className="h-4 w-4" />
-                Text to Video
+                🎬 Text to Video
               </button>
               <button
                 onClick={() => setActiveTab("i2v")}
@@ -129,15 +117,14 @@ export default function HomePage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <ImageIcon className="h-4 w-4" />
-                Image to Video
+                🖼️ Image to Video
               </button>
             </div>
 
             {/* 图生视频上传区 */}
             {activeTab === "i2v" && (
               <div className="rounded-xl border-2 border-dashed border-zinc-800 hover:border-rose-500/50 bg-zinc-950/40 p-6 text-center transition-all cursor-pointer">
-                <ImageIcon className="mx-auto h-8 w-8 text-rose-400/80" />
+                <div className="mx-auto text-2xl">📷</div>
                 <p className="mt-2 text-sm font-medium text-zinc-300">Click to upload reference image</p>
                 <p className="text-xs text-zinc-500 mt-1">Supports PNG, JPG, WEBP (Max 20MB)</p>
               </div>
@@ -153,7 +140,7 @@ export default function HomePage() {
                   onClick={() => setPrompt("A stunning cybernetic female model walking through neon-lit streets in rain, cinematic lighting, 8k")}
                   className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
                 >
-                  <Sparkles className="h-3 w-3" /> Try Sample Prompt
+                  ✨ Try Sample Prompt
                 </button>
               </div>
               <textarea
@@ -239,8 +226,7 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate Video (Cost: 10 Credits)
+                  ✨ Generate Video (Cost: 10 Credits)
                 </>
               )}
             </button>
@@ -252,8 +238,8 @@ export default function HomePage() {
               <div className="w-full text-center space-y-4 py-16">
                 <div className="relative mx-auto h-20 w-20 flex items-center justify-center">
                   <div className="absolute inset-0 animate-ping rounded-full bg-rose-600/30" />
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-rose-600 to-pink-600 shadow-lg shadow-rose-600/50">
-                    <Sparkles className="h-8 w-8 text-white animate-pulse" />
+                  <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-rose-600 to-pink-600 shadow-lg shadow-rose-600/50 text-2xl">
+                    ✨
                   </div>
                 </div>
                 <div>
@@ -284,7 +270,7 @@ export default function HomePage() {
                     download
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-xs font-semibold text-white hover:bg-zinc-700 transition-all"
                   >
-                    <Download className="h-3.5 w-3.5" /> Download MP4
+                    ⬇️ Download MP4
                   </a>
                   <button
                     onClick={() => setGeneratedVideo(null)}
@@ -296,8 +282,8 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="text-center py-16 text-zinc-500 space-y-3">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950">
-                  <Play className="h-6 w-6 text-zinc-600" />
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 text-2xl">
+                  ▶️
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-300">Ready to Create</p>
@@ -311,21 +297,21 @@ export default function HomePage() {
         {/* 底部保障与特色 */}
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-zinc-800/80 pt-10 text-zinc-400">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 text-rose-500 shrink-0" />
+            <span className="text-rose-500 text-lg">🛡️</span>
             <div>
               <h4 className="text-sm font-semibold text-white">Full Privacy & Encryption</h4>
               <p className="text-xs text-zinc-500 mt-1">All generation prompts and uploads are encrypted and private to your account.</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <Zap className="h-5 w-5 text-pink-500 shrink-0" />
+            <span className="text-pink-500 text-lg">⚡</span>
             <div>
               <h4 className="text-sm font-semibold text-white">Instant GPU Rendering</h4>
               <p className="text-xs text-zinc-500 mt-1">Powered by clustered Wan 2.2 nodes with high-speed rendering pipelines.</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <Layers className="h-5 w-5 text-violet-500 shrink-0" />
+            <span className="text-violet-500 text-lg">⚖️</span>
             <div>
               <h4 className="text-sm font-semibold text-white">Commercial Rights Included</h4>
               <p className="text-xs text-zinc-500 mt-1">100% royalty-free ownership for all videos generated on PornMake.</p>
