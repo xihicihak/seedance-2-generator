@@ -17,54 +17,89 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 providers.push(
   CredentialsProvider({
     id: "credentials",
-    name: "API Key",
+    name: "Credentials",
     credentials: {
+      email: { label: "Email", type: "email" },
       apiKey: { label: "API Key", type: "password" },
     },
     async authorize(credentials) {
-      if (!credentials?.apiKey) {
-        throw new Error("API Key is required");
-      }
-      const apiKey = credentials.apiKey.trim();
-      if (apiKey.length < 5) {
-        throw new Error("Invalid API key format");
-      }
+      const adminEmails = (process.env.ADMIN_EMAILS || "xihicihak43@gmail.com").split(",").map(e => e.trim().toLowerCase());
 
-      const dummyEmail = `apikey_${apiKey.slice(-8)}@muapi.local`;
-      let dbUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { customApiKey: apiKey },
-            { email: dummyEmail }
-          ]
+      // 1. Direct Email Sign In
+      if (credentials?.email && credentials.email.trim().includes("@")) {
+        const email = credentials.email.trim().toLowerCase();
+        let dbUser = await prisma.user.findUnique({
+          where: { email }
+        });
+
+        if (!dbUser) {
+          const role = adminEmails.includes(email) ? "ADMIN" : "USER";
+          dbUser = await prisma.user.create({
+            data: {
+              name: email.split("@")[0],
+              email,
+              credits: 30,
+              role,
+            }
+          });
         }
-      });
 
-      if (!dbUser) {
-        dbUser = await prisma.user.create({
-          data: {
-            name: "API Key User",
-            email: dummyEmail,
-            customApiKey: apiKey,
-            credits: 0,
+        return {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          image: dbUser.image || null,
+          credits: dbUser.credits,
+          role: dbUser.role || (adminEmails.includes(email) ? "ADMIN" : "USER"),
+        };
+      }
+
+      // 2. Custom API Key Sign In
+      if (credentials?.apiKey) {
+        const apiKey = credentials.apiKey.trim();
+        if (apiKey.length < 5) {
+          throw new Error("Invalid API key format");
+        }
+
+        const dummyEmail = `apikey_${apiKey.slice(-8)}@pornmake.local`;
+        let dbUser = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { customApiKey: apiKey },
+              { email: dummyEmail }
+            ]
           }
         });
-      } else if (!dbUser.customApiKey) {
-        dbUser = await prisma.user.update({
-          where: { id: dbUser.id },
-          data: { customApiKey: apiKey }
-        });
+
+        if (!dbUser) {
+          dbUser = await prisma.user.create({
+            data: {
+              name: "API Key User",
+              email: dummyEmail,
+              customApiKey: apiKey,
+              credits: 30,
+            }
+          });
+        } else if (!dbUser.customApiKey) {
+          dbUser = await prisma.user.update({
+            where: { id: dbUser.id },
+            data: { customApiKey: apiKey }
+          });
+        }
+
+        return {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          image: dbUser.image || null,
+          credits: dbUser.credits,
+          customApiKey: dbUser.customApiKey || apiKey,
+          isApiKeyUser: true,
+          role: dbUser.role || "USER",
+        };
       }
 
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        image: dbUser.image || null,
-        credits: dbUser.credits,
-        customApiKey: dbUser.customApiKey || apiKey,
-        isApiKeyUser: true,
-      };
+      throw new Error("Please enter a valid email address or API Key");
     }
   })
 );

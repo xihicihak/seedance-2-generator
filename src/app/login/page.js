@@ -20,6 +20,35 @@ function LoginContent() {
     }
   }, [status, router, next]);
 
+  const [email, setEmail] = useState("");
+
+  const handleEmailLogin = async (e) => {
+    e?.preventDefault();
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: email.trim(),
+        callbackUrl: next,
+      });
+      if (res?.error) {
+        toast.error(res.error);
+        setIsLoading(false);
+      } else {
+        toast.success("Welcome to PornMake Studio!");
+        router.push(next);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Sign in failed. Please try again.");
+      setIsLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
@@ -48,13 +77,43 @@ function LoginContent() {
         </div>
 
         <div className="space-y-4 pt-2">
+          {/* Email Instant Login Form */}
+          <form onSubmit={handleEmailLogin} className="space-y-3">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@domain.com"
+                required
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-xs text-zinc-100 placeholder-zinc-500 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500/50 transition-all"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !email}
+              className="w-full py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-violet-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-rose-600/30 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {isLoading ? "Signing in..." : "Continue with Email (Instant Access)"}
+            </button>
+          </form>
+
+          <div className="flex items-center gap-3 my-2">
+            <div className="h-px bg-zinc-800 flex-1" />
+            <span className="text-[10px] uppercase font-bold text-zinc-500">OR</span>
+            <div className="h-px bg-zinc-800 flex-1" />
+          </div>
+
           <button
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full py-3.5 bg-white text-neutral-900 hover:bg-zinc-100 rounded-xl text-xs font-bold flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-60"
+            className="w-full py-3 bg-white text-neutral-900 hover:bg-zinc-100 rounded-xl text-xs font-bold flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-60"
           >
             <FaGoogle className="text-sm text-red-500" />
-            <span>{isLoading ? "Connecting..." : "Continue with Google"}</span>
+            <span>Continue with Google</span>
           </button>
           
           <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-xs text-zinc-400 space-y-2">
@@ -63,7 +122,7 @@ function LoginContent() {
               <span>New Account Bonus</span>
             </div>
             <p className="text-[11px] text-zinc-500">
-              Sign up today and receive initial credits to test out Wan 2.2 text-to-video & image-to-video rendering.
+              Sign up today and receive 30 initial GPU credits to test Wan 2.2 text-to-video & image-to-video rendering.
             </p>
           </div>
         </div>
@@ -71,7 +130,15 @@ function LoginContent() {
         <div className="flex items-start gap-2.5 bg-zinc-950/40 border border-zinc-800/80 p-3.5 rounded-xl text-[11px] leading-relaxed text-zinc-400">
           <FaInfoCircle className="text-rose-400 text-xs shrink-0 mt-0.5" />
           <span>
-            By signing in, you agree to our Terms of Service. All generated videos and prompt histories remain private to your account.
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="text-rose-400 underline hover:text-rose-300">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-rose-400 underline hover:text-rose-300">
+              Privacy Policy
+            </Link>
+            . All generated videos and prompt histories remain private to your account.
           </span>
         </div>
 

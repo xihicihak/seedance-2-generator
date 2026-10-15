@@ -14,13 +14,21 @@ export default function Footer() {
           <span className="text-zinc-600">•</span>
           <span>&copy; {currentYear} All rights reserved.</span>
         </div>
-        <div className="flex items-center gap-4 text-zinc-400">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-zinc-400">
           <Link href="/gallery" className="hover:text-rose-400 transition-colors">
             Gallery
           </Link>
           <span className="text-zinc-700">•</span>
           <Link href="/pricing" className="hover:text-rose-400 transition-colors">
             Pricing
+          </Link>
+          <span className="text-zinc-700">•</span>
+          <Link href="/terms" className="hover:text-rose-400 transition-colors">
+            Terms of Service
+          </Link>
+          <span className="text-zinc-700">•</span>
+          <Link href="/privacy" className="hover:text-rose-400 transition-colors">
+            Privacy Policy
           </Link>
           <span className="text-zinc-700">•</span>
           <a href="https://www.pornmakes.com" className="hover:text-rose-400 transition-colors">

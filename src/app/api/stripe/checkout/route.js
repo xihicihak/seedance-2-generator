@@ -11,16 +11,13 @@ export async function POST(req) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { price, credits } = await req.json();
-    const checkoutUrl = await BillingService.createCheckoutSession(
-      session.user.id, 
-      price, 
-      credits
-    );
+    const body = await req.json();
+    const planId = body.planId || (body.credits >= 2000 ? "business" : body.credits >= 600 ? "pro" : body.credits >= 250 ? "standard" : "basic");
+    const checkoutUrl = await BillingService.createCheckoutSession(session.user.id, planId);
 
     return NextResponse.json({ url: checkoutUrl });
   } catch (error) {
     console.error("[STRIPE_CHECKOUT]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to create checkout session" }, { status: 500 });
   }
 }

@@ -4,18 +4,20 @@ import { UserService } from "./user";
 
 export const BillingService = {
   async createCheckoutSession(userId, planId) {
-    const plan = config.stripe.plans[planId];
+    const plan = config.stripe.plans[planId] || config.stripe.plans.default;
     if (!plan) throw new Error("Invalid plan selected");
+
+    const appUrl = config.domain || config.auth.url || "https://www.pornmakes.com";
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: plan.currency || "usd",
             product_data: {
-              name: `${config.stripe.plans[planId].name}`,
-              description: `Purchase ${plan.credits} credits to perform AI generations.`,
+              name: `PornMake - ${plan.name}`,
+              description: `Purchase ${plan.credits} GPU compute credits for Wan 2.2 video rendering.`,
             },
             unit_amount: plan.price,
           },
@@ -23,9 +25,9 @@ export const BillingService = {
         },
       ],
       mode: "payment",
-      success_url: `${config.auth.url}/pricing?success=true`,
-      cancel_url: `${config.auth.url}/pricing?canceled=true`,
-      metadata: { userId, credits: plan.credits.toString() },
+      success_url: `${appUrl}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/pricing?canceled=true`,
+      metadata: { userId, credits: plan.credits.toString(), planId: planId || "default" },
     });
 
     return session.url;

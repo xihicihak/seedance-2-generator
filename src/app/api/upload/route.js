@@ -7,43 +7,62 @@ export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const formData = await req.formData();
     const file = formData.get("file");
 
-    if (!file) {
-      return new NextResponse("No file provided", { status: 400 });
+    if (!file || typeof file === "string") {
+      return NextResponse.json({ error: "No valid image file provided" }, { status: 400 });
     }
 
-    const apiKey = config.ai.seedance.apiKey;
-    if (!apiKey) {
-      return new NextResponse("API Key not configured", { status: 500 });
+    const comfyApiUrl = process.env.COMFYUI_API_URL || config.ai.comfyui.apiUrl;
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // 1. If ComfyUI is configured, attempt uploading directly to ComfyUI /upload/image
+    if (comfyApiUrl && !comfyApiUrl.includes("127.0.0.1")) {
+      try {
+        const comfyFormData = new FormData();
+        const blob = new Blob([buffer], { type: file.type || "image/png" });
+        comfyFormData.append("image", blob, file.name || "reference.png");
+        comfyFormData.append("overwrite", "true");
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+        const comfyRes = await fetch(`${comfyApiUrl}/upload/image`, {
+          method: "POST",
+          body: comfyFormData,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (comfyRes.ok) {
+          const comfyData = await comfyRes.json();
+          return NextResponse.json({
+            success: true,
+            url: comfyData.name,
+            filename: comfyData.name,
+            source: "comfyui",
+          });
+        }
+      } catch (comfyErr) {
+        console.warn("[UPLOAD] Could not upload directly to ComfyUI:", comfyErr.message);
+      }
     }
 
-    // Prepare for MuAPI
-    const muapiFormData = new FormData();
-    muapiFormData.append("file", file);
+    // 2. Fallback: Base64 Data URL (self-contained, works with Wan 2.2 pipelines & previews)
+    const mimeType = file.type || "image/png";
+    const base64Data = buffer.toString("base64");
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
-    const response = await fetch("https://api.muapi.ai/api/v1/upload_file", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-      },
-      body: muapiFormData,
+    return NextResponse.json({
+      success: true,
+      url: dataUrl,
+      filename: file.name || "reference.png",
+      source: "data_url",
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`MuAPI Upload Failed: ${response.status} ${errorText}`);
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error) {
     console.error("[UPLOAD_ERROR]", error);
-    return new NextResponse(error.message || "Internal Error", { status: 500 });
+    return NextResponse.json({ error: error.message || "Upload failed" }, { status: 500 });
   }
 }

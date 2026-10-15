@@ -22,10 +22,35 @@ const config = {
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     plans: {
       default: {
-        amount: 50, // 50 credits
+        name: "Starter Pack",
+        credits: 100,
         price: 500, // $5.00
         currency: "usd",
-      }
+      },
+      basic: {
+        name: "Starter Pack",
+        credits: 100,
+        price: 500, // $5.00
+        currency: "usd",
+      },
+      standard: {
+        name: "Creator Pack",
+        credits: 250,
+        price: 1000, // $10.00
+        currency: "usd",
+      },
+      pro: {
+        name: "Studio Pack",
+        credits: 600,
+        price: 2000, // $20.00
+        currency: "usd",
+      },
+      business: {
+        name: "Agency Pack",
+        credits: 2000,
+        price: 5000, // $50.00
+        currency: "usd",
+      },
     }
   },
   ai: {

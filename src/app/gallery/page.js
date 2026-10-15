@@ -22,11 +22,31 @@ export default function CreationsPage() {
   const [downloading, setDownloading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  const DEMO_SHOWCASE = [
+    {
+      id: "demo_1",
+      prompt: "Cyberpunk protagonist on neon-lit rain rooftop, hyper-realistic motion, cinematic lighting, 8k",
+      videoFiles: ["https://assets.mixkit.co/videos/preview/mixkit-futuristic-city-with-flying-cars-41551-large.mp4"],
+      quality: "Wan 2.2 14B",
+      status: "completed",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "demo_2",
+      prompt: "Elegantly animated fashion portrait with dramatic rim lighting and dynamic particle motion",
+      videoFiles: ["https://assets.mixkit.co/videos/preview/mixkit-top-aerial-shot-of-seashore-with-rocks-1090-large.mp4"],
+      quality: "Wan 2.2 Turbo",
+      status: "completed",
+      createdAt: new Date().toISOString(),
+    }
+  ];
+
   useEffect(() => {
     if (status === "authenticated") {
       fetchCreations();
     } else if (status === "unauthenticated") {
-      router.push("/login");
+      setCreations(DEMO_SHOWCASE);
+      setLoading(false);
     }
   }, [status]);
 
@@ -34,13 +54,31 @@ export default function CreationsPage() {
     try {
       const res = await fetch("/api/creations");
       const data = await res.json();
-      if (res.ok) {
-        setCreations(data);
+      if (res.ok && Array.isArray(data)) {
+        setCreations(data.length > 0 ? data : DEMO_SHOWCASE);
       }
     } catch (error) {
       console.error("Error fetching creations:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteCreation = async (id) => {
+    if (id.startsWith("demo_")) {
+      setCreations((prev) => prev.filter((item) => item.id !== id));
+      setSelectedImage(null);
+      return;
+    }
+    if (!confirm("Are you sure you want to permanently delete this video creation?")) return;
+    try {
+      const res = await fetch(`/api/creations?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setCreations((prev) => prev.filter((item) => item.id !== id));
+        setSelectedImage(null);
+      }
+    } catch (err) {
+      console.error("Delete failed:", err);
     }
   };
 
@@ -149,7 +187,7 @@ export default function CreationsPage() {
               <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-bold">Prompt</h4>
               <p className="text-sm text-zinc-200 mt-1">{selectedImage.prompt}</p>
             </div>
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <button
                 onClick={async () => {
                   setDownloading(true);
@@ -157,17 +195,26 @@ export default function CreationsPage() {
                   setDownloading(false);
                 }}
                 disabled={downloading}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-rose-600/30 hover:brightness-110"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-rose-600/30 hover:brightness-110 cursor-pointer"
               >
                 <FiDownload />
                 <span>{downloading ? "Downloading..." : "Download MP4"}</span>
               </button>
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white"
-              >
-                Close
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDeleteCreation(selectedImage.id)}
+                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 cursor-pointer transition-colors"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setSelectedImage(null)}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

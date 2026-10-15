@@ -22,8 +22,11 @@ export default function HomePage() {
     const file = e.target.files?.[0];
     if (file) {
       setReferenceImage(file);
-      const url = URL.createObjectURL(file);
-      setReferenceImageUrl(url);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setReferenceImageUrl(event.target?.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -35,6 +38,31 @@ export default function HomePage() {
     setStatusMessage("Submitting task to Wan 2.2 GPU cluster...");
 
     try {
+      let finalImageUrl = referenceImageUrl;
+
+      // If in I2V mode with a file, attempt uploading to get a clean server/ComfyUI reference
+      if (activeTab === "i2v" && referenceImage) {
+        setStatusMessage("Uploading reference image...");
+        try {
+          const uploadData = new FormData();
+          uploadData.append("file", referenceImage);
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            body: uploadData,
+          });
+          if (uploadRes.ok) {
+            const upResult = await uploadRes.json();
+            if (upResult.url) {
+              finalImageUrl = upResult.url;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn("[UPLOAD_WARNING] Fallback to client base64:", uploadErr);
+        }
+      }
+
+      setStatusMessage("Submitting task to Wan 2.2 GPU cluster...");
+
       // Send task to /api/generate
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -45,7 +73,7 @@ export default function HomePage() {
           aspectRatio,
           quality: modelQuality,
           mode: activeTab,
-          imageUrl: referenceImageUrl || null
+          imageUrl: finalImageUrl || null
         })
       });
 
