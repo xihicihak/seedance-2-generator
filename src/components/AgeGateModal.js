@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function AgeGateModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     try {
       const verified = localStorage.getItem("pornmake_age_verified");
       if (!verified) {
-        setIsOpen(true);
+        const timer = setTimeout(() => {
+          setIsOpen(true);
+        }, 0);
+        return () => clearTimeout(timer);
       }
     } catch (e) {
       // In case localStorage is blocked
@@ -37,14 +42,14 @@ export default function AgeGateModal() {
         </div>
 
         <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-          Age Verification Required
+          {t("ageGate.title")}
         </h2>
         <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-rose-400">
-          Adults Only (18+ or Legal Age)
+          {t("ageGate.badge")}
         </p>
 
         <p className="mt-4 text-xs leading-relaxed text-zinc-400">
-          This website contains adult-themed AI generative tools and content powered by the Wan 2.2 engine. By entering, you certify that you are at least 18 years of age (or the age of legal majority in your jurisdiction) and agree to our Terms of Service.
+          {t("ageGate.description")}
         </p>
 
         <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
@@ -52,18 +57,18 @@ export default function AgeGateModal() {
             onClick={handleConfirm}
             className="flex-1 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-violet-600 py-3 text-xs font-bold text-white shadow-lg shadow-rose-600/30 hover:brightness-110 active:scale-95 transition-all"
           >
-            I am 18+ — Enter
+            {t("ageGate.enterBtn")}
           </button>
           <button
             onClick={handleExit}
             className="rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-xs font-medium text-zinc-400 hover:text-white transition-all"
           >
-            Exit
+            {t("ageGate.exitBtn")}
           </button>
         </div>
 
         <p className="mt-4 text-[10px] text-zinc-600">
-          PornMake Studio strictly adheres to 18 U.S.C. § 2257 compliance and zero-tolerance policies.
+          {t("ageGate.compliance")}
         </p>
       </div>
     </div>

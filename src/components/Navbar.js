@@ -6,9 +6,12 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { IoClose, IoMenu } from "react-icons/io5";
 import { FiLogOut, FiUser } from "react-icons/fi";
+import { useTranslation } from "@/context/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const { t } = useTranslation();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -41,7 +44,7 @@ export default function Navbar() {
               pathname === "/" ? "text-white font-bold" : "hover:text-rose-400"
             }`}
           >
-            Studio
+            {t("nav.studio")}
           </Link>
           <Link
             href="/gallery"
@@ -49,7 +52,7 @@ export default function Navbar() {
               pathname === "/gallery" ? "text-white font-bold" : "hover:text-rose-400"
             }`}
           >
-            Gallery
+            {t("nav.gallery")}
           </Link>
           <Link
             href="/pricing"
@@ -57,19 +60,21 @@ export default function Navbar() {
               pathname === "/pricing" ? "text-white font-bold" : "hover:text-rose-400"
             }`}
           >
-            Pricing <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] text-rose-300 font-semibold">Credits</span>
+            {t("nav.pricing")} <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] text-rose-300 font-semibold">{t("nav.credits")}</span>
           </Link>
         </nav>
 
         {/* User Balance & Actions */}
         <div className="hidden sm:flex items-center gap-3">
+          <LanguageSelector />
+
           {(session?.user?.role === "ADMIN" || session?.user?.email === "xihicihak43@gmail.com") && (
             <Link
               href="/admin"
               className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-gradient-to-r from-rose-600/20 via-pink-600/20 to-amber-500/20 px-3 py-1.5 text-xs font-bold text-rose-300 shadow-lg shadow-rose-950/40 hover:border-rose-400 hover:text-white transition-all"
             >
               <span>👑</span>
-              <span>Admin Portal</span>
+              <span>{t("nav.adminPortal")}</span>
             </Link>
           )}
 
@@ -78,7 +83,7 @@ export default function Navbar() {
             className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-700 transition-colors"
           >
             <span className="text-rose-400 font-bold">⚡</span>
-            <span>Balance: <strong className="text-white">{credits} Credits</strong></span>
+            <span>{t("nav.balance")}: <strong className="text-white">{credits} {t("nav.credits")}</strong></span>
           </Link>
 
           {status === "authenticated" ? (
@@ -111,7 +116,7 @@ export default function Navbar() {
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors"
                     >
                       <span>👑</span>
-                      <span>Admin Management</span>
+                      <span>{t("nav.adminManagement")}</span>
                     </Link>
                   )}
                   <button
@@ -119,7 +124,7 @@ export default function Navbar() {
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
                   >
                     <FiLogOut size={14} />
-                    <span>Sign Out</span>
+                    <span>{t("nav.signOut")}</span>
                   </button>
                 </div>
               )}
@@ -129,7 +134,7 @@ export default function Navbar() {
               href="/login"
               className="rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition-all hover:brightness-110 active:scale-95"
             >
-              Sign In
+              {t("nav.signIn")}
             </Link>
           )}
         </div>
@@ -162,21 +167,21 @@ export default function Navbar() {
               onClick={() => setIsOpen(false)}
               className={`py-2 text-sm font-semibold ${pathname === "/" ? "text-rose-400 font-bold" : "text-zinc-300"}`}
             >
-              Studio
+              {t("nav.studio")}
             </Link>
             <Link
               href="/gallery"
               onClick={() => setIsOpen(false)}
               className={`py-2 text-sm font-semibold ${pathname === "/gallery" ? "text-rose-400 font-bold" : "text-zinc-300"}`}
             >
-              Gallery
+              {t("nav.gallery")}
             </Link>
             <Link
               href="/pricing"
               onClick={() => setIsOpen(false)}
               className={`py-2 text-sm font-semibold ${pathname === "/pricing" ? "text-rose-400 font-bold" : "text-zinc-300"}`}
             >
-              Pricing & Credits
+              {t("nav.pricing")} & {t("nav.credits")}
             </Link>
             {(session?.user?.role === "ADMIN" || session?.user?.email === "xihicihak43@gmail.com") && (
               <Link
@@ -185,7 +190,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 py-2 text-sm font-bold text-amber-300"
               >
                 <span>👑</span>
-                <span>Admin Master Portal</span>
+                <span>{t("nav.adminPortal")}</span>
               </Link>
             )}
             {status === "authenticated" ? (
@@ -197,7 +202,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 py-2 text-sm font-semibold text-rose-400 text-left"
               >
                 <FiLogOut size={16} />
-                <span>Sign Out ({session.user.email})</span>
+                <span>{t("nav.signOut")} ({session.user.email})</span>
               </button>
             ) : (
               <Link
@@ -205,9 +210,11 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="mt-2 text-center rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 py-2.5 text-sm font-bold text-white shadow-md shadow-rose-600/20"
               >
-                Sign In
+                {t("nav.signIn")}
               </Link>
             )}
+
+            <LanguageSelector variant="mobile-list" />
           </nav>
         </div>
       )}

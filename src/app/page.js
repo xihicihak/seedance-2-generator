@@ -2,8 +2,10 @@
 
 import React, { useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("t2v");
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
@@ -35,14 +37,14 @@ export default function HomePage() {
     setErrorMsg("");
     setIsGenerating(true);
     setProgress(10);
-    setStatusMessage("Submitting task to Wan 2.2 GPU cluster...");
+    setStatusMessage(t("studio.submittingTask"));
 
     try {
       let finalImageUrl = referenceImageUrl;
 
       // If in I2V mode with a file, attempt uploading to get a clean server/ComfyUI reference
       if (activeTab === "i2v" && referenceImage) {
-        setStatusMessage("Uploading reference image...");
+        setStatusMessage(t("studio.uploadingImage"));
         try {
           const uploadData = new FormData();
           uploadData.append("file", referenceImage);
@@ -61,7 +63,7 @@ export default function HomePage() {
         }
       }
 
-      setStatusMessage("Submitting task to Wan 2.2 GPU cluster...");
+      setStatusMessage(t("studio.submittingTask"));
 
       // Send task to /api/generate
       const res = await fetch("/api/generate", {
@@ -83,7 +85,7 @@ export default function HomePage() {
       }
 
       const taskId = data.taskId;
-      setStatusMessage("Synthesizing latent frames with Wan 2.2...");
+      setStatusMessage(t("studio.synthesizing"));
       setProgress(25);
 
       // Poll task status
@@ -98,7 +100,7 @@ export default function HomePage() {
             setProgress(100);
             setIsGenerating(false);
             setGeneratedVideo(pollData.videoUrl);
-            setStatusMessage("Rendering complete!");
+            setStatusMessage(t("studio.renderingComplete"));
           } else if (pollData.status === "failed") {
             clearInterval(pollInterval);
             setIsGenerating(false);
@@ -131,10 +133,10 @@ export default function HomePage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-8 text-center sm:text-left">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
-            Next-Gen AI Video Generator
+            {t("studio.title")}
           </h1>
           <p className="mt-2 text-sm text-zinc-400">
-            Powered by Wan 2.2 Engine. Transform text & photos into hyper-realistic, dynamic 4K videos.
+            {t("studio.subtitle")}
           </p>
         </div>
 
@@ -152,7 +154,7 @@ export default function HomePage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                🎬 Text to Video
+                🎬 {t("studio.textToVideo")}
               </button>
               <button
                 onClick={() => setActiveTab("i2v")}
@@ -162,7 +164,7 @@ export default function HomePage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                🖼️ Image to Video
+                🖼️ {t("studio.imageToVideo")}
               </button>
             </div>
 
@@ -187,13 +189,13 @@ export default function HomePage() {
                         alt="Reference"
                         className="max-h-36 rounded-lg object-contain border border-zinc-800"
                       />
-                      <span className="text-xs text-rose-400 font-medium">Click to change reference image</span>
+                      <span className="text-xs text-rose-400 font-medium">{t("studio.uploadChange")}</span>
                     </div>
                   ) : (
                     <>
                       <div className="mx-auto text-2xl">📷</div>
-                      <p className="mt-2 text-sm font-medium text-zinc-300">Click to upload reference image</p>
-                      <p className="text-xs text-zinc-500 mt-1">Supports PNG, JPG, WEBP (Max 20MB)</p>
+                      <p className="mt-2 text-sm font-medium text-zinc-300">{t("studio.uploadPrompt")}</p>
+                      <p className="text-xs text-zinc-500 mt-1">{t("studio.uploadHint")}</p>
                     </>
                   )}
                 </div>
@@ -204,13 +206,13 @@ export default function HomePage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                  Prompt Description
+                  {t("studio.promptLabel")}
                 </label>
                 <button 
-                  onClick={() => setPrompt("A stunning cybernetic female model walking through neon-lit streets in rain, cinematic lighting, 8k")}
+                  onClick={() => setPrompt(t("studio.samplePromptText"))}
                   className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
                 >
-                  ✨ Try Sample Prompt
+                  ✨ {t("studio.trySample")}
                 </button>
               </div>
               <textarea
@@ -219,8 +221,8 @@ export default function HomePage() {
                 rows={4}
                 placeholder={
                   activeTab === "t2v"
-                    ? "Describe the visual details, lighting, action and atmosphere in detail..."
-                    : "Describe how you want the uploaded photo to animate or transform..."
+                    ? t("studio.t2vPlaceholder")
+                    : t("studio.i2vPlaceholder")
                 }
                 className="w-full rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-100 placeholder-zinc-500 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500/50 transition-all resize-none"
               />
@@ -229,13 +231,13 @@ export default function HomePage() {
             {/* Negative Prompt */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                Negative Prompt (Optional)
+                {t("studio.negativePromptLabel")}
               </label>
               <input
                 type="text"
                 value={negativePrompt}
                 onChange={(e) => setNegativePrompt(e.target.value)}
-                placeholder="blurry, distorted faces, extra limbs, low resolution, artifacts"
+                placeholder={t("studio.negativePromptPlaceholder")}
                 className="w-full rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500/50"
               />
             </div>
@@ -244,7 +246,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                  Aspect Ratio
+                  {t("studio.aspectRatio")}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {["16:9", "9:16", "1:1"].map((ratio) => (
@@ -266,15 +268,15 @@ export default function HomePage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                  Engine Quality
+                  {t("studio.engineQuality")}
                 </label>
                 <select
                   value={modelQuality}
                   onChange={(e) => setModelQuality(e.target.value)}
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-medium text-zinc-200 focus:border-rose-500 focus:outline-none"
                 >
-                  <option value="wan2.2-14b">Wan 2.2 Ultra (14B High-Def)</option>
-                  <option value="wan2.2-fast">Wan 2.2 Fast Turbo (8B)</option>
+                  <option value="wan2.2-14b">{t("studio.ultraQuality")}</option>
+                  <option value="wan2.2-fast">{t("studio.fastQuality")}</option>
                 </select>
               </div>
             </div>
@@ -298,11 +300,11 @@ export default function HomePage() {
               {isGenerating ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Generating Video ({progress}%)...
+                  {t("studio.generatingBtn", { progress })}
                 </>
               ) : (
                 <>
-                  ✨ Generate Video (Cost: 10 Credits)
+                  ✨ {t("studio.generateBtn")}
                 </>
               )}
             </button>
@@ -319,8 +321,8 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Rendering with Wan 2.2...</h3>
-                  <p className="text-xs text-zinc-400 mt-1">{statusMessage || "Synthesizing frames & motion interpolation"}</p>
+                  <h3 className="text-base font-bold text-white">{t("studio.renderingTitle")}</h3>
+                  <p className="text-xs text-zinc-400 mt-1">{statusMessage || t("studio.renderingDefault")}</p>
                 </div>
                 <div className="w-3/4 mx-auto bg-zinc-800 rounded-full h-2 overflow-hidden">
                   <div 
@@ -348,13 +350,13 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 py-2.5 text-xs font-semibold text-white hover:bg-zinc-700 transition-all"
                   >
-                    ⬇️ Download MP4
+                    ⬇️ {t("studio.downloadBtn")}
                   </a>
                   <button
                     onClick={() => setGeneratedVideo(null)}
                     className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-medium text-zinc-400 hover:text-white"
                   >
-                    Clear
+                    {t("studio.clearBtn")}
                   </button>
                 </div>
               </div>
@@ -364,8 +366,8 @@ export default function HomePage() {
                   ▶️
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-300">Ready to Create</p>
-                  <p className="text-xs text-zinc-500">Your generated video will appear here in HD</p>
+                  <p className="text-sm font-medium text-zinc-300">{t("studio.readyTitle")}</p>
+                  <p className="text-xs text-zinc-500">{t("studio.readySubtitle")}</p>
                 </div>
               </div>
             )}
@@ -377,22 +379,22 @@ export default function HomePage() {
           <div className="flex items-start gap-3">
             <span className="text-rose-500 text-lg">🛡️</span>
             <div>
-              <h4 className="text-sm font-semibold text-white">Full Privacy & Encryption</h4>
-              <p className="text-xs text-zinc-500 mt-1">All generation prompts and uploads are encrypted and private to your account.</p>
+              <h4 className="text-sm font-semibold text-white">{t("studio.feature1Title")}</h4>
+              <p className="text-xs text-zinc-500 mt-1">{t("studio.feature1Desc")}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-pink-500 text-lg">⚡</span>
             <div>
-              <h4 className="text-sm font-semibold text-white">Instant GPU Rendering</h4>
-              <p className="text-xs text-zinc-500 mt-1">Powered by clustered Wan 2.2 nodes with high-speed rendering pipelines.</p>
+              <h4 className="text-sm font-semibold text-white">{t("studio.feature2Title")}</h4>
+              <p className="text-xs text-zinc-500 mt-1">{t("studio.feature2Desc")}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-violet-500 text-lg">⚖️</span>
             <div>
-              <h4 className="text-sm font-semibold text-white">Commercial Rights Included</h4>
-              <p className="text-xs text-zinc-500 mt-1">100% royalty-free ownership for all videos generated on PornMake.</p>
+              <h4 className="text-sm font-semibold text-white">{t("studio.feature3Title")}</h4>
+              <p className="text-xs text-zinc-500 mt-1">{t("studio.feature3Desc")}</p>
             </div>
           </div>
         </div>

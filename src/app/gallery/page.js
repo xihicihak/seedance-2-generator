@@ -13,9 +13,11 @@ import { downloadMedia } from "@/lib/utils";
 import { FiDownload } from "react-icons/fi";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function CreationsPage() {
   const { status } = useSession();
+  const { t } = useTranslation();
   const router = useRouter();
   const [creations, setCreations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function CreationsPage() {
       setSelectedImage(null);
       return;
     }
-    if (!confirm("Are you sure you want to permanently delete this video creation?")) return;
+    if (!confirm(t("gallery.deleteConfirm"))) return;
     try {
       const res = await fetch(`/api/creations?id=${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -91,14 +93,14 @@ export default function CreationsPage() {
           <div className="flex items-center gap-3 text-rose-500 mb-1">
             <FaCalendarAlt className="text-sm" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.4em] text-rose-400">
-              Generated Archive
+              {t("gallery.badge")}
             </span>
           </div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
-            Wan 2.2 Creations
+            {t("gallery.title")}
           </h1>
           <p className="text-zinc-400 font-medium text-xs tracking-wider leading-relaxed max-w-xl">
-            All AI video generations associated with your PornMake account.
+            {t("gallery.subtitle")}
           </p>
         </header>
 
@@ -112,16 +114,16 @@ export default function CreationsPage() {
               <FaMagic />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">No Creations Yet</h3>
+              <h3 className="text-lg font-bold text-white">{t("gallery.emptyTitle")}</h3>
               <p className="text-xs text-zinc-400 max-w-sm">
-                You haven&apos;t generated any videos yet. Head over to the Studio to create your first Wan 2.2 masterpiece.
+                {t("gallery.emptySubtitle")}
               </p>
             </div>
             <button
               onClick={() => router.push("/")}
               className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:brightness-110 shadow-lg shadow-rose-600/30"
             >
-              Go to Studio
+              {t("gallery.goToStudio")}
             </button>
           </div>
         ) : (
@@ -184,7 +186,7 @@ export default function CreationsPage() {
               />
             </div>
             <div>
-              <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-bold">Prompt</h4>
+              <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-bold">{t("gallery.modalPrompt")}</h4>
               <p className="text-sm text-zinc-200 mt-1">{selectedImage.prompt}</p>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -198,7 +200,7 @@ export default function CreationsPage() {
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-rose-600/30 hover:brightness-110 cursor-pointer"
               >
                 <FiDownload />
-                <span>{downloading ? "Downloading..." : "Download MP4"}</span>
+                <span>{downloading ? t("pricing.processing") : t("gallery.download")} MP4</span>
               </button>
 
               <div className="flex items-center gap-2">
@@ -206,13 +208,13 @@ export default function CreationsPage() {
                   onClick={() => handleDeleteCreation(selectedImage.id)}
                   className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 cursor-pointer transition-colors"
                 >
-                  Delete
+                  {t("gallery.delete")}
                 </button>
                 <button
                   onClick={() => setSelectedImage(null)}
                   className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white cursor-pointer"
                 >
-                  Close
+                  {t("admin.cancel")}
                 </button>
               </div>
             </div>

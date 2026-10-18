@@ -21,9 +21,12 @@ import {
   FiDollarSign,
   FiArrowLeft
 } from "react-icons/fi";
+import { useTranslation } from "@/context/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
 
   // State
@@ -217,6 +220,7 @@ export default function AdminPage() {
             </div>
 
             <div className="flex items-center gap-2 pl-3 border-l border-zinc-800">
+              <LanguageSelector />
               <div className="text-right hidden sm:block">
                 <div className="text-xs font-semibold text-white">{session?.user?.name || "Admin"}</div>
                 <div className="text-[10px] text-zinc-400 truncate max-w-[150px]">{session?.user?.email}</div>
@@ -228,13 +232,13 @@ export default function AdminPage() {
           </div>
         </div>
 
-          {/* Navigation Tabs */}
+        {/* Navigation Tabs */}
         <div className="max-w-7xl mx-auto mt-4 flex items-center gap-2 border-t border-zinc-800/60 pt-3 overflow-x-auto">
           {[
-            { id: "overview", label: "Dashboard Overview", icon: FiZap },
-            { id: "users", label: "Users & Credits", icon: FiUsers },
-            { id: "creations", label: "Video Task Queue", icon: FiVideo },
-            { id: "system", label: "Cluster & External Links", icon: FiCpu }
+            { id: "overview", label: t("admin.badge"), icon: FiZap },
+            { id: "users", label: t("admin.tabUsers"), icon: FiUsers },
+            { id: "creations", label: t("admin.tabCreations"), icon: FiVideo },
+            { id: "system", label: "ComfyUI & Cluster", icon: FiCpu }
           ].map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -272,7 +276,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl relative overflow-hidden group hover:border-zinc-700 transition-all">
                 <div className="flex items-center justify-between text-zinc-400 mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider">Total Registered Users</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">{t("admin.totalUsers")}</span>
                   <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400"><FiUsers /></div>
                 </div>
                 <div className="text-3xl font-black text-white">{stats?.stats?.totalUsers ?? 0}</div>
@@ -283,7 +287,7 @@ export default function AdminPage() {
 
               <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl relative overflow-hidden group hover:border-zinc-700 transition-all">
                 <div className="flex items-center justify-between text-zinc-400 mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider">Total Video Tasks</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">{t("admin.tabCreations")}</span>
                   <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400"><FiVideo /></div>
                 </div>
                 <div className="text-3xl font-black text-white">{stats?.stats?.totalCreations ?? 0}</div>
@@ -295,7 +299,7 @@ export default function AdminPage() {
 
               <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl relative overflow-hidden group hover:border-zinc-700 transition-all">
                 <div className="flex items-center justify-between text-zinc-400 mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider">Pool Credits Available</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">{t("admin.totalCredits")}</span>
                   <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400"><FiDollarSign /></div>
                 </div>
                 <div className="text-3xl font-black text-white">{stats?.stats?.totalCredits ?? 0}</div>
@@ -306,7 +310,7 @@ export default function AdminPage() {
 
               <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl relative overflow-hidden group hover:border-zinc-700 transition-all">
                 <div className="flex items-center justify-between text-zinc-400 mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider">Today's Generations</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">{t("admin.todayCreations")}</span>
                   <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><FiClock /></div>
                 </div>
                 <div className="text-3xl font-black text-white">{stats?.stats?.todayCreations ?? 0}</div>
@@ -321,10 +325,10 @@ export default function AdminPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-rose-400 text-sm font-bold">
                   <FiCpu className="text-lg" />
-                  <span>Wan 2.2 Inference Pipeline Active</span>
+                  <span>{t("admin.pipelineActive")}</span>
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Target ComfyUI Compute URL: <code className="text-amber-300 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">{stats?.system?.comfyUiUrl}</code>
+                  {t("admin.pipelineDesc")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -424,7 +428,7 @@ export default function AdminPage() {
                 <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm" />
                 <input
                   type="text"
-                  placeholder="Search by Email, Name, User ID or API Key..."
+                  placeholder={t("admin.searchPlaceholder")}
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && fetchUsers()}
@@ -435,7 +439,7 @@ export default function AdminPage() {
                 onClick={fetchUsers}
                 className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all"
               >
-                <FiRefreshCw /> Search Users
+                <FiRefreshCw /> {t("admin.refresh")}
               </button>
             </div>
 
@@ -445,12 +449,12 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs text-zinc-300">
                   <thead className="bg-zinc-950/80 text-[11px] uppercase tracking-wider text-zinc-400 border-b border-zinc-800">
                     <tr>
-                      <th className="py-3.5 px-4">User</th>
-                      <th className="py-3.5 px-4">Role</th>
-                      <th className="py-3.5 px-4">Balance</th>
-                      <th className="py-3.5 px-4">Creations</th>
-                      <th className="py-3.5 px-4">Joined Date</th>
-                      <th className="py-3.5 px-4 text-right">Quick Credit Adjust</th>
+                      <th className="py-3.5 px-4">{t("admin.user")}</th>
+                      <th className="py-3.5 px-4">{t("admin.role")}</th>
+                      <th className="py-3.5 px-4">{t("admin.credits")}</th>
+                      <th className="py-3.5 px-4">{t("admin.tabCreations")}</th>
+                      <th className="py-3.5 px-4">{t("gallery.modalDate")}</th>
+                      <th className="py-3.5 px-4 text-right">{t("admin.adjustCredits")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/60">

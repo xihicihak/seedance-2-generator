@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { t } = useTranslation();
 
   return (
     <footer className="w-full border-t border-zinc-800/80 bg-[#090a0f] py-8 text-center text-xs text-zinc-500 mt-auto">
@@ -12,23 +14,23 @@ export default function Footer() {
           <span className="font-bold text-zinc-300">PORNMAKE</span>
           <span className="text-[10px] text-zinc-600">WAN 2.2 STUDIO</span>
           <span className="text-zinc-600">•</span>
-          <span>&copy; {currentYear} All rights reserved.</span>
+          <span>&copy; {currentYear} {t("footer.allRightsReserved")}</span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 text-zinc-400">
           <Link href="/gallery" className="hover:text-rose-400 transition-colors">
-            Gallery
+            {t("footer.gallery")}
           </Link>
           <span className="text-zinc-700">•</span>
           <Link href="/pricing" className="hover:text-rose-400 transition-colors">
-            Pricing
+            {t("footer.pricing")}
           </Link>
           <span className="text-zinc-700">•</span>
           <Link href="/terms" className="hover:text-rose-400 transition-colors">
-            Terms of Service
+            {t("footer.terms")}
           </Link>
           <span className="text-zinc-700">•</span>
           <Link href="/privacy" className="hover:text-rose-400 transition-colors">
-            Privacy Policy
+            {t("footer.privacy")}
           </Link>
           <span className="text-zinc-700">•</span>
           <a href="https://www.pornmakes.com" className="hover:text-rose-400 transition-colors">

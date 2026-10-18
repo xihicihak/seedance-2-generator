@@ -7,21 +7,23 @@ import Footer from "@/components/Footer";
 import { FaCheck, FaInfoCircle } from "react-icons/fa";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-
-const PLANS = [
-  { id: "basic", name: "Starter Pack", price: "$5", credits: 100, description: "Great for testing Wan 2.2 prompts and quick short generations." },
-  { id: "standard", name: "Creator Pack", price: "$10", credits: 250, description: "Ideal for regular creators generating high definition videos." },
-  { id: "pro", name: "Studio Pack", price: "$20", credits: 600, description: "Designed for power users demanding batch exports and high speed.", popular: true },
-  { id: "business", name: "Agency Pack", price: "$50", credits: 2000, description: "Maximum value pack for high-volume commercial production." }
-];
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function Pricing() {
   const { status } = useSession();
+  const { t } = useTranslation();
   const [loadingPlan, setLoadingPlan] = useState(null);
+
+  const PLANS = [
+    { id: "basic", name: t("pricing.starterName"), price: "$5", credits: 100, description: t("pricing.starterDesc") },
+    { id: "standard", name: t("pricing.creatorName"), price: "$10", credits: 250, description: t("pricing.creatorDesc") },
+    { id: "pro", name: t("pricing.studioName"), price: "$20", credits: 600, description: t("pricing.studioDesc"), popular: true },
+    { id: "business", name: t("pricing.agencyName"), price: "$50", credits: 2000, description: t("pricing.agencyDesc") }
+  ];
 
   const handleCheckout = async (planId) => {
     if (status !== "authenticated") {
-      toast.error("Please sign in first to purchase credits.");
+      toast.error(t("pricing.signInFirst"));
       return;
     }
 
@@ -50,13 +52,13 @@ export default function Pricing() {
         <div className="text-center space-y-4 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full mb-1">
             <span className="text-rose-400 text-xs">⚡</span>
-            <span className="text-[10px] font-bold text-rose-300 uppercase tracking-widest">Pricing & Credits</span>
+            <span className="text-[10px] font-bold text-rose-300 uppercase tracking-widest">{t("pricing.badge")}</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-            Wan 2.2 GPU Compute Credits
+            {t("pricing.title")}
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Flexible pay-as-you-go credit packages for Wan 2.2 14B High-Definition video rendering. No monthly lock-in, credits never expire.
+            {t("pricing.subtitle")}
           </p>
         </div>
 
@@ -73,7 +75,7 @@ export default function Pricing() {
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md shadow-rose-600/30">
-                  Most Popular
+                  {t("pricing.mostPopular")}
                 </div>
               )}
 
@@ -84,30 +86,34 @@ export default function Pricing() {
 
               <div className="mb-6 flex items-baseline gap-1">
                 <span className="text-4xl font-black text-white">{plan.price}</span>
-                <span className="text-xs text-zinc-500">/ one-time</span>
+                <span className="text-xs text-zinc-500">{t("pricing.oneTime")}</span>
               </div>
 
               <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 mb-6 text-center">
                 <div className="text-2xl font-black text-rose-400">{plan.credits}</div>
-                <div className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">GPU Credits</div>
+                <div className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">{t("pricing.gpuCredits")}</div>
               </div>
 
               <ul className="mb-8 space-y-2.5 text-xs text-zinc-300 flex-1">
                 <li className="flex items-center gap-2">
                   <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
-                  <span>Wan 2.2 (14B) & Fast Turbo</span>
+                  <span>{t("pricing.feat1")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
-                  <span>Text to Video & Image to Video</span>
+                  <span>{t("pricing.feat2")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
-                  <span>Commercial usage rights</span>
+                  <span>{t("pricing.feat3")}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
-                  <span>Credits never expire</span>
+                  <span>{t("pricing.feat4")}</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheck className="text-rose-400 shrink-0 text-[10px]" />
+                  <span>{t("pricing.feat5")}</span>
                 </li>
               </ul>
 
@@ -120,7 +126,7 @@ export default function Pricing() {
                     : "bg-zinc-800 hover:bg-zinc-700 text-white"
                 } ${loadingPlan === plan.id ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {loadingPlan === plan.id ? "Redirecting..." : `Buy for ${plan.price}`}
+                {loadingPlan === plan.id ? t("pricing.processing") : `${t("pricing.getStarted")} (${plan.price})`}
               </button>
             </div>
           ))}
