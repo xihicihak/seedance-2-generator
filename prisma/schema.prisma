@@ -46,6 +46,7 @@ model User {
   accounts      Account[]
   creations     Creation[]
   sessions      Session[]
+  purchases     CreationPurchase[]
 }
 
 model Creation {
@@ -64,7 +65,30 @@ model Creation {
   audioFiles  String[]
   videoFiles  String[]
   inputImages String?  @db.Text
+  isPublished Boolean  @default(false)
+  price       Int      @default(10)
   user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchases   CreationPurchase[]
+}
+
+model CreationPurchase {
+  id             String   @id @default(cuid())
+  userId         String
+  creationId     String
+  creatorId      String
+  amountPaid     Int
+  creatorAmount  Int
+  maintenanceFee Int
+  platformFee    Int
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creation       Creation @relation(fields: [creationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, creationId])
+  @@index([userId])
+  @@index([creationId])
+  @@index([creatorId])
 }
 
 model VerificationToken {
