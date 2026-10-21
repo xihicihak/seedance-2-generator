@@ -47,6 +47,7 @@ model User {
   creations     Creation[]
   sessions      Session[]
   purchases     CreationPurchase[]
+  transactions  Transaction[]
 }
 
 model Creation {
@@ -97,4 +98,22 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String   @default("PURCHASE") // "PURCHASE", "REFUND", "BONUS"
+  amount          Int      // credits gained or refunded
+  price           Int?     // price in cents (e.g. 990 for $9.90)
+  currency        String   @default("usd")
+  stripeSessionId String?  @unique // Idempotency key from Stripe
+  status          String   @default("completed") // "pending", "completed", "failed"
+  metadata        String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripeSessionId])
 }

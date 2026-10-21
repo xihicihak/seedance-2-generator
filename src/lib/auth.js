@@ -28,6 +28,15 @@ providers.push(
       // 1. Direct Email Sign In
       if (credentials?.email && credentials.email.trim().includes("@")) {
         const email = credentials.email.trim().toLowerCase();
+        const isAdminEmail = adminEmails.includes(email);
+
+        // Security Guard: in production, require ADMIN_SECRET for direct admin login
+        if (isAdminEmail && process.env.NODE_ENV === "production" && process.env.ADMIN_SECRET) {
+          if (credentials.apiKey !== process.env.ADMIN_SECRET) {
+            throw new Error("Admin authentication requires a valid Admin Secret key in production.");
+          }
+        }
+
         let dbUser = await prisma.user.findUnique({
           where: { email }
         });

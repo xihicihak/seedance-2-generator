@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import { useTranslation } from "@/context/LanguageContext";
 
 export default function HomePage() {
+  const { update: updateSession } = useSession();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("t2v");
   const [prompt, setPrompt] = useState("");
@@ -19,6 +21,16 @@ export default function HomePage() {
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef = useRef(null);
+  const pollTimerRef = useRef(null);
+
+  // Clean up polling interval when component unmounts to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -88,23 +100,38 @@ export default function HomePage() {
       setStatusMessage(t("studio.synthesizing"));
       setProgress(25);
 
-      // Poll task status
-      const pollInterval = setInterval(async () => {
+      // Safe Polling with Timeout and Cleanup
+      let attempts = 0;
+      const MAX_ATTEMPTS = 80; // 80 * 1.5s = 120s max before graceful timeout
+
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+
+      pollTimerRef.current = setInterval(async () => {
+        attempts++;
+        if (attempts > MAX_ATTEMPTS) {
+          clearInterval(pollTimerRef.current);
+          setIsGenerating(false);
+          setErrorMsg("Generation task timed out on GPU queue. Please check your Gallery in a moment.");
+          return;
+        }
+
         try {
           const pollRes = await fetch(`/api/generate?taskId=${encodeURIComponent(taskId)}`);
           if (!pollRes.ok) return;
 
           const pollData = await pollRes.json();
           if (pollData.status === "completed" && pollData.videoUrl) {
-            clearInterval(pollInterval);
+            clearInterval(pollTimerRef.current);
             setProgress(100);
             setIsGenerating(false);
             setGeneratedVideo(pollData.videoUrl);
             setStatusMessage(t("studio.renderingComplete"));
+            if (updateSession) updateSession();
           } else if (pollData.status === "failed") {
-            clearInterval(pollInterval);
+            clearInterval(pollTimerRef.current);
             setIsGenerating(false);
             setErrorMsg(pollData.error || "Video generation failed on GPU worker.");
+            if (updateSession) updateSession();
           } else {
             if (pollData.progress) {
               setProgress(pollData.progress);

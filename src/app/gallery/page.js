@@ -778,7 +778,7 @@ export default function GalleryPage() {
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-emerald-400">
                     <FaHeart className="text-[10px]" />
-                    <span>创作者收益 (60% 创作者将用于继续生成创作)</span>
+                    <span>{t("gallery.splitCreator")}</span>
                   </span>
                   <span className="font-mono font-bold text-emerald-400">
                     +{Math.floor((unlockTarget.price || 10) * 0.6)} ⚡
@@ -787,7 +787,7 @@ export default function GalleryPage() {
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-zinc-400">
                     <FaShieldAlt className="text-[10px]" />
-                    <span>平台基础设施与维护成本 (20%)</span>
+                    <span>{t("gallery.splitMaintenance")}</span>
                   </span>
                   <span className="font-mono text-zinc-400">
                     {Math.floor((unlockTarget.price || 10) * 0.2)} ⚡
@@ -796,7 +796,7 @@ export default function GalleryPage() {
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-zinc-400">
                     <FaCoins className="text-[10px]" />
-                    <span>平台运营服务 (20%)</span>
+                    <span>{t("gallery.splitPlatform")}</span>
                   </span>
                   <span className="font-mono text-zinc-400">
                     {(unlockTarget.price || 10) -

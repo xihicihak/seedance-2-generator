@@ -71,9 +71,11 @@ export default function AdminPage() {
   };
 
   // Fetch Creations
-  const fetchCreations = async () => {
+  const fetchCreations = async (filterOverride, searchOverride) => {
+    const filter = filterOverride !== undefined ? filterOverride : creationFilter;
+    const search = searchOverride !== undefined ? searchOverride : creationSearch;
     try {
-      const res = await fetch(`/api/admin/creations?status=${creationFilter}&search=${encodeURIComponent(creationSearch)}`);
+      const res = await fetch(`/api/admin/creations?status=${filter}&search=${encodeURIComponent(search)}`);
       if (res.ok) {
         const data = await res.json();
         setCreations(data.creations || []);
@@ -541,7 +543,7 @@ export default function AdminPage() {
                 {["all", "processing", "completed", "failed"].map((st) => (
                   <button
                     key={st}
-                    onClick={() => { setCreationFilter(st); fetchCreations(); }}
+                    onClick={() => { setCreationFilter(st); fetchCreations(st); }}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase transition-all whitespace-nowrap ${
                       creationFilter === st
                         ? "bg-rose-600 text-white shadow-md shadow-rose-900/30"

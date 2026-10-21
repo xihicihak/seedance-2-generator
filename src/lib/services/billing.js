@@ -1,6 +1,7 @@
 import { stripe } from "../stripe";
 import config from "../config";
 import { UserService } from "./user";
+import { prisma } from "../prisma";
 
 export const BillingService = {
   async createCheckoutSession(userId, planId) {
@@ -37,12 +38,49 @@ export const BillingService = {
     const event = stripe.webhooks.constructEvent(body, signature, config.stripe.webhookSecret);
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const userId = session.metadata.userId;
-      const credits = parseInt(session.metadata.credits || "0", 10);
+      const userId = session.metadata?.userId;
+      const credits = parseInt(session.metadata?.credits || "0", 10);
+      const planId = session.metadata?.planId || "default";
+      const amountTotal = session.amount_total || 0;
 
       if (userId && credits > 0) {
-        await UserService.addCredits(userId, credits);
-        return { success: true, userId, credits };
+        // 1. Idempotency Check: if this stripe session has already been processed, skip gracefully
+        const existingTx = await prisma.transaction.findUnique({
+          where: { stripeSessionId: session.id },
+        });
+
+        if (existingTx) {
+          console.log(`[STRIPE_WEBHOOK] Session ${session.id} already processed. Skipping duplicate grant.`);
+          return { success: true, alreadyProcessed: true, userId, credits };
+        }
+
+        // 2. Atomic Transaction: Record transaction + Increment user credits
+        await prisma.$transaction([
+          prisma.transaction.create({
+            data: {
+              userId,
+              type: "PURCHASE",
+              amount: credits,
+              price: amountTotal,
+              currency: session.currency || "usd",
+              stripeSessionId: session.id,
+              status: "completed",
+              metadata: JSON.stringify({
+                planId,
+                customerEmail: session.customer_details?.email,
+                paymentStatus: session.payment_status,
+              }),
+            },
+          }),
+          prisma.user.update({
+            where: { id: userId },
+            data: {
+              credits: { increment: credits },
+            },
+          }),
+        ]);
+
+        return { success: true, userId, credits, sessionId: session.id };
       }
     }
     return { success: false };

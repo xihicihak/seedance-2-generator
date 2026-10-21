@@ -93,9 +93,9 @@ export async function POST(req) {
     const platformFee = price - creatorAmount - maintenanceFee;
 
     const txOps = [
-      // 1. Deduct buyer credits
+      // 1. Deduct buyer credits with atomic gte constraint (prevents concurrent double spending)
       prisma.user.update({
-        where: { id: buyerId },
+        where: { id: buyerId, credits: { gte: price } },
         data: { credits: { decrement: price } },
         select: { id: true, credits: true },
       }),
@@ -135,6 +135,12 @@ export async function POST(req) {
       platformFee,
     });
   } catch (error) {
+    if (error.code === "P2025") {
+      return NextResponse.json(
+        { error: "insufficient_credits", message: "Insufficient credits available." },
+        { status: 400 }
+      );
+    }
     console.error("Unlock creation error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to unlock creation" },

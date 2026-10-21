@@ -119,6 +119,13 @@ function buildWanWorkflow({ mode, prompt, negativePrompt, width, height, quality
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json(
+        { error: "unauthorized", message: "Please sign in to generate videos." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const {
       prompt,
@@ -133,6 +140,35 @@ export async function POST(req) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
+    const COST = 10;
+
+    // 1. Atomic Balance Check & Credit Pre-deduction (ACID Concurrency Safe)
+    let updatedUser;
+    try {
+      updatedUser = await prisma.user.update({
+        where: {
+          id: session.user.id,
+          credits: { gte: COST },
+        },
+        data: {
+          credits: { decrement: COST },
+        },
+        select: { id: true, credits: true },
+      });
+    } catch (err) {
+      if (err.code === "P2025") {
+        return NextResponse.json(
+          {
+            error: "insufficient_credits",
+            message: "Insufficient credits available. Please purchase credits to generate videos.",
+            needed: COST,
+          },
+          { status: 400 }
+        );
+      }
+      throw err;
+    }
+
     const { width, height } = getResolution(aspectRatio, quality);
     const comfyApiUrl = process.env.COMFYUI_API_URL || config.ai.comfyui.apiUrl;
     const workflow = buildWanWorkflow({ mode, prompt, negativePrompt, width, height, quality, imageUrl });
@@ -140,7 +176,7 @@ export async function POST(req) {
     let taskId = null;
     let isMock = false;
 
-    // Attempt to submit prompt to ComfyUI backend
+    // 2. Attempt to submit prompt to ComfyUI backend
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -166,41 +202,34 @@ export async function POST(req) {
       taskId = `wan22_task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     }
 
-    // Save record to database if prisma is initialized
+    // 3. Save creation record to database with failure compensation
     try {
-      if (prisma?.creation) {
-        await prisma.creation.create({
-          data: {
-            prompt,
-            imageUrl: imageUrl || null,
-            aspectRatio,
-            quality,
-            status: "processing",
-            requestId: taskId,
-            userId: session?.user?.id || undefined,
-          }
-        });
-      }
+      await prisma.creation.create({
+        data: {
+          prompt,
+          imageUrl: imageUrl || null,
+          aspectRatio,
+          quality,
+          status: "processing",
+          requestId: taskId,
+          userId: session.user.id,
+        }
+      });
     } catch (dbErr) {
-      console.warn("[DB] Could not record creation:", dbErr.message);
-    }
-
-    // Deduct user credits if logged in
-    try {
-      if (session?.user?.id && prisma?.user) {
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { credits: { decrement: 10 } }
-        });
-      }
-    } catch (creditErr) {
-      console.warn("[CREDITS] Deduct credits warning:", creditErr.message);
+      console.error("[DB] Could not record creation, rolling back credits:", dbErr.message);
+      // Automatic compensation refund on database error
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { credits: { increment: COST } },
+      });
+      return NextResponse.json({ error: "Failed to create generation record" }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
       taskId,
       status: "processing",
+      credits: updatedUser.credits,
       comfyApiUrl,
       mode,
       quality,
@@ -258,6 +287,34 @@ export async function GET(req) {
         if (historyRes.ok) {
           const historyData = await historyRes.json();
           const taskHistory = historyData[taskId];
+
+          if (taskHistory && taskHistory.status?.status_str === "error") {
+            if (creation && creation.status === "processing" && creation.userId) {
+              await prisma.$transaction([
+                prisma.creation.update({
+                  where: { id: creation.id },
+                  data: { status: "failed", error: "GPU task execution failed" }
+                }),
+                prisma.user.update({
+                  where: { id: creation.userId },
+                  data: { credits: { increment: 10 } }
+                }),
+                prisma.transaction.create({
+                  data: {
+                    userId: creation.userId,
+                    type: "REFUND",
+                    amount: 10,
+                    status: "completed",
+                    metadata: JSON.stringify({ reason: "GPU task failed", taskId })
+                  }
+                })
+              ]);
+            }
+            return NextResponse.json({
+              status: "failed",
+              error: "Video generation failed on GPU node. 10 credits have been refunded."
+            });
+          }
 
           if (taskHistory && taskHistory.outputs) {
             for (const nodeId of Object.keys(taskHistory.outputs)) {
