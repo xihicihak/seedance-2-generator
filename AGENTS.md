@@ -1,5 +1,16 @@
 # 系统级存储与开发运行规范 · 实用标准版
 
+## 0. 项目最高执行协议（Sovereign Engineering Protocol）
+本项目及后续所有会话与二次开发，必须无条件遵循根目录下的规则协议文件 [`.antigravity/rules.md`](.antigravity/rules.md) 及 [`.cursorrules`](.cursorrules)：
+1. **技术伙伴与建设性质疑（Constructive Pushback）**：杜绝盲从，主动预审死锁、性能瓶颈、安全缺陷与反模式，提出最优替代解。
+2. **全权自主授权（Autonomous Execution）**：静默执行终端命令、文件改动与 MCP 调用，杜绝无意义人工许可打断。
+3. **防幻觉与工程探索（Explore-First & Anti-Hallucination）**：禁止凭空捏造 API/依赖，小步验证，最小代码入侵。
+4. **严苛自测试闭环（Rigorous Self-Testing）**：真机执行、自动化测试与接口断言为唯一交付标准，覆盖异常边界。
+5. **工具与生态感知（MCP & GitHub-First）**：优先调用本地 MCP 工具与 GitHub 成熟标准生态。
+6. **自动化 Git 托管（Automated Git Delivery）**：按 Conventional Commits 规范自动提交并同步远程。
+7. **安全防御（Hard Safety Boundary）**：禁止破坏性删除，服务防挂起死锁，默认私有仓库，严禁泄露密钥。
+8. **轻量标准汇报（Max 10 Lines）**：10行内汇报改动、测试结果与 Commit Hash。
+
 本项目及后续所有项目管理、环境搭建、依赖构建和代码编写，严格遵守以下磁盘与存储管理规范：
 
 ## 1. 严格分区存储原则（大容量文件一律落入 D 盘）
